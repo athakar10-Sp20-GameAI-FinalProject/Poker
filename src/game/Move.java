@@ -1,16 +1,16 @@
 package game;
 
 public class Move {
-	private String action;
+	private Action action;
 	private int amount;
 	
-	public Move(String action)
+	public Move(Action action)
 	{
 		this.action = action;
 		this.amount = 0;
 	}
 	
-	public Move(String action, int amount)
+	public Move(Action action, int amount)
 	{
 		this.action = action;
 		this.amount = amount;
@@ -18,6 +18,6 @@ public class Move {
 	
 	public String getAction()
 	{
-		return this.action + this.amount;
+		return this.action.toString() + this.amount;
 	}
 }
