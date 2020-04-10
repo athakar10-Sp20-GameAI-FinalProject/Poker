@@ -11,16 +11,16 @@ public class Card {
         this.suit = suit;
     }
 
-    void changeCard(CardEnum card, SuitEnum suit) {
+    public void changeCard(CardEnum card, SuitEnum suit) {
         this.card = card;
         this.suit = suit;
     }
 
-    String getName() {
+    public String getName() {
         return card.getType() + suit.getSuit();
     }
 
-    CardEnum getCard() { return card; }
+    public CardEnum getCard() { return card; }
 
-    SuitEnum getSuit() { return suit; }
+    public SuitEnum getSuit() { return suit; }
 }

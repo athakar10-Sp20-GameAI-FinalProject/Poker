@@ -2,5 +2,5 @@ package agent;
 
 public class MCTS {
 
-	public MCTCS() {}
+	public MCTS() {}
 }

@@ -21,22 +21,15 @@ public class Deck {
             throw new IndexOutOfBoundsException("Deck does not contain 52 cards.");
     }
 
-    int size() { return this.deck.size(); }
+    public int size() { return this.deck.size(); }
 
-    String draw() {
-        Iterator<Card> itrCard = deck.iterator();
-
-        if (!itrCard.hasNext()) {
-            throw new IndexOutOfBoundsException("Deck is empty!");
-        }
-
-        Card next = itrCard.next();
-        String name = next.getName();
-        this.deck.remove(next);
-        return name;
+    public Card draw() {
+        Card next = deck.get(0);
+        this.deck.remove(0);
+        return next;
     }
 
-    void shuffle() {
+    public void shuffle() {
         Collections.shuffle(this.deck);
     }
 }
