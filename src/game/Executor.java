@@ -39,7 +39,7 @@ public class Executor {
 			}
 			
 			// TODO: remove this when done testing
-			dealer.removePlayer(players.get(0));
+			dealer.playRound();
 		}
 		
 	}
