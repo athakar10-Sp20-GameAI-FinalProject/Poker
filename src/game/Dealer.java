@@ -6,6 +6,9 @@ import java.util.Scanner;
 import agent.Agent;
 
 public class Dealer {
+	
+	private final static Dealer instance = new Dealer();
+	private static boolean initialized = false;
 
 	public static final int HAND_SIZE = 2;
 	public static final int BIG_BLIND = 10;
@@ -21,7 +24,9 @@ public class Dealer {
 	private boolean preFlop;
 	private int pot;
 
-	public Dealer(List<Agent> players) {
+	private Dealer() { super(); }
+	
+	private void init(List<Agent> players) {
 		deck = new Deck();
 		this.players = players;
 		playersInHand = players;
@@ -31,6 +36,15 @@ public class Dealer {
 		highestBet = BIG_BLIND;
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
+	}
+	
+	public static Dealer getInstance(List<Agent> players) {
+		if(initialized) {
+			return instance;
+		}
+		instance.init(players);
+		initialized = true;
+		return instance;
 	}
 
 	// TODO: add in pot vs overall game logic

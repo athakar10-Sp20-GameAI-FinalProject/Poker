@@ -27,7 +27,7 @@ public class Executor {
 	
 	public void runGame(List<Agent> players)
 	{
-		Dealer dealer = new Dealer(players);
+		Dealer dealer = Dealer.getInstance(players);
 		dealer.deal();
 		dealer.playRound();
 		while(!dealer.isGameOver())
