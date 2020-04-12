@@ -6,9 +6,6 @@ import java.util.Scanner;
 import agent.Agent;
 
 public class Dealer {
-	
-	private final static Dealer instance = new Dealer();
-	private static boolean initialized = false;
 
 	public static final int HAND_SIZE = 2;
 	public static final int BIG_BLIND = 10;
@@ -24,9 +21,7 @@ public class Dealer {
 	private boolean preFlop;
 	private int pot;
 
-	private Dealer() { super(); }
-	
-	private void init(List<Agent> players) {
+	public Dealer(List<Agent> players) {
 		deck = new Deck();
 		this.players = players;
 		playersInHand = players;
@@ -38,13 +33,17 @@ public class Dealer {
 		pot = BIG_BLIND + SMALL_BLIND;
 	}
 	
-	public static Dealer getInstance(List<Agent> players) {
-		if(initialized) {
-			return instance;
-		}
-		instance.init(players);
-		initialized = true;
-		return instance;
+	public Dealer makeCopy() {
+		Dealer ret = new Dealer(players);
+		ret.deck = deck;
+		ret.playersInHand = playersInHand;
+		ret.numPlayers = numPlayers;
+		ret.bigBlind = bigBlind;
+		ret.highestBet = highestBet;
+		ret.highestBetter = highestBetter;
+		ret.preFlop = preFlop;
+		ret.pot = pot;
+		return ret;
 	}
 
 	// TODO: add in pot vs overall game logic
@@ -101,7 +100,7 @@ public class Dealer {
 
 						index--;
 						System.out.println(
-								"You can only bet when it is the first time increasing amount. YOu can try raising.");
+								"You can only bet when it is the first time increasing amount. You can try raising.");
 					}
 				} else if (action == ActionEnum.RAISE) {
 					if (highestBet != BIG_BLIND && (currentMove.getAmount() - highestBet * 2) >= 0) {
