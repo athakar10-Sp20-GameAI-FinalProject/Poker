@@ -2,6 +2,7 @@
 *.class
 *.project
 *.classpath
+*.DS_STORE
 
 # Log file
 *.log
