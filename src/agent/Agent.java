@@ -1,18 +1,21 @@
 package agent;
 
+import game.ActionEnum;
 import game.Card;
 import game.Dealer;
-import game.Move;
 
 
-public abstract class Agent {
+public interface Agent {
 	
-//	public abstract Move getMove(Dealer dealer);
-	public abstract void setHand(Card c1, Card c2);
-	public abstract void printHand();
-	public abstract void setBlind(int blind);
-	public abstract void setBet(int blind);
-	public abstract int getBetAmount();
-	public abstract int getChips();
-	public abstract void printBetAmount();
+	public ActionEnum getMove(Dealer dealer);
+	public void setHand(Card c1, Card c2);
+	public void printHand();
+	public void setBlind(int blind);
+	public void setBet(int blind);
+	public int getBetAmount(ActionEnum action);
+	public int getBet();
+	public int getChips();
+	public void printBetAmount();
+	public void addChips(int pot);
+	public Card[] getHand();
 }

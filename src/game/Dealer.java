@@ -1,13 +1,22 @@
 package game;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 import agent.Agent;
 
 public class Dealer {
+	
+	private enum Round {
+		PREFLOP, FLOP, TURN, RIVER;
+	}
 
 	public static final int HAND_SIZE = 2;
+	public static final int COMMUNITY_SIZE = 5;
 	public static final int BIG_BLIND = 10;
 	public static final int SMALL_BLIND = BIG_BLIND / 2;
 
@@ -15,22 +24,27 @@ public class Dealer {
 	private List<Agent> players;
 	private List<Agent> playersInHand;
 	private int numPlayers;
+	private int numPlayersInHand;
 	private int bigBlind;
 	private int highestBet;
 	private Agent highestBetter;
-	private boolean preFlop;
+	private Round round;
 	private int pot;
+	private Card[] community;
+	private final Scanner sc = new Scanner(System.in);
 
 	public Dealer(List<Agent> players) {
 		deck = new Deck();
 		this.players = players;
 		playersInHand = players;
 		numPlayers = playersInHand.size();
+		numPlayersInHand = numPlayers;
 		bigBlind = 0;
-		preFlop = true;
+		community = new Card[COMMUNITY_SIZE];
 		highestBet = BIG_BLIND;
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
+		round = Round.PREFLOP;
 	}
 	
 	public Dealer makeCopy() {
@@ -41,99 +55,254 @@ public class Dealer {
 		ret.bigBlind = bigBlind;
 		ret.highestBet = highestBet;
 		ret.highestBetter = highestBetter;
-		ret.preFlop = preFlop;
+		ret.round = round;
 		ret.pot = pot;
+		ret.community = community;
+		ret.numPlayersInHand = numPlayersInHand;
 		return ret;
 	}
+	
+	public boolean isPotOver() {
+		return numPlayersInHand <= 1;
+	}
+	
+	public List<ActionEnum> getValidActions(Agent player) {
+		List<ActionEnum> moves = new ArrayList<>(7);
+		
+		// TODO: add logic
+		moves.add(ActionEnum.BET);
+		moves.add(ActionEnum.FOLD);
+		moves.add(ActionEnum.RAISE);
+		moves.add(ActionEnum.CHECK);
+		moves.add(ActionEnum.CALL);
+		return moves;
+	}
 
-	// TODO: add in pot vs overall game logic
 	public void playRound() {
-		if (preFlop) {
-			getBigBlind().setBlind(BIG_BLIND);
-			getSmallBlind().setBlind(SMALL_BLIND);
-			int index = 1;
-			Agent currentPlayer = getNextPlayer(index);
-			while (!allBetsEqual() && (highestBetter != currentPlayer)) {
-
-				System.out.println("What action will you take: Call, Raise, Bet, Check, or Fold.");
-				currentPlayer.printHand();
-				System.out.println("Action: ");
-
-				Scanner sc = new Scanner(System.in);
-				String parseAction = sc.nextLine();
-				ActionEnum action = getAction(parseAction);
-				
-				int parseBet;
-
-				if (ActionEnum.needsAmount(action)) {
-					parseBet = sc.nextInt();
-				} else {
-					parseBet = 0;
+		switch(round) {
+			case PREFLOP: 
+				System.out.println("PRE FLOP");
+				getBigBlind().setBlind(BIG_BLIND);
+				getSmallBlind().setBlind(SMALL_BLIND);
+				parseActions(1);
+				round = Round.FLOP;
+			break;
+			case FLOP:
+				System.out.println("FLOP");
+				for(int i = 0; i < COMMUNITY_SIZE - 2; i++) {
+					community[i] = deck.draw();
 				}
-
-				Move currentMove = new Move(action, parseBet);
-
-				currentMove.printMove();
-
-				System.out.println(highestBet + " " + pot);
-
-				if (action == ActionEnum.FOLD) {
-
-					removePlayer(currentPlayer);
-				} else if (action == ActionEnum.CALL) {
-
-					currentPlayer.setBet(highestBet);
-					pot += highestBet - currentPlayer.getBetAmount();
-				} else if (action == ActionEnum.CHECK) {
-					if (highestBet != currentPlayer.getBetAmount()) {
-						index--;
-						System.out.println("You do not have the sufficent chips playerd to check.");
-					}
-				} else if (action == ActionEnum.BET) {
-					if (highestBet == BIG_BLIND && (currentMove.getAmount() - BIG_BLIND * 2) >= 0) {
-
-						currentPlayer.setBet(currentMove.getAmount());
-						highestBet = currentMove.getAmount();
-						pot += highestBet;
-						highestBetter = currentPlayer;
-					} else {
-
-						index--;
-						System.out.println(
-								"You can only bet when it is the first time increasing amount. You can try raising.");
-					}
-				} else if (action == ActionEnum.RAISE) {
-					if (highestBet != BIG_BLIND && (currentMove.getAmount() - highestBet * 2) >= 0) {
-
-						currentPlayer.setBet(currentMove.getAmount());
-						highestBet = currentMove.getAmount();
-						pot += highestBet;
-						highestBetter = currentPlayer;
-					} else {
-
-						index--;
-						if ((currentMove.getAmount() - highestBet * 2) < 0) {
-
-							System.out.println(
-									"You need to increase the size of the raise to at least the current highest bet times 2");
-						} else if (highestBet == BIG_BLIND) {
-
-							System.out.println(
-									"You can only raise when there has already been a bet placed. Try again but place a bet.");
-						}
-					}
-				}
-
-				index++;
-				currentPlayer = getNextPlayer(index);
+				printCommunity();
+				parseActions(-2);
+				round = Round.TURN;
+			break;
+			case TURN:
+				System.out.println("TURN");
+				community[3] = deck.draw();
+				printCommunity();
+				parseActions(-2);
+				round = Round.RIVER;
+			break;
+			case RIVER:
+				System.out.println("RIVER");
+				community[4] = deck.draw();
+				printCommunity();
+				parseActions(-2);
+			break;
+			default: System.out.println("ERROR in dealer");
+		}
+	}
+	
+	private void printCommunity() {
+		for(Card c : community) {
+			if(c != null) {
+				System.out.print(c.getName() + " ");
 			}
 		}
+		System.out.println();
+	}
+	
+	private void parseActions(int position) {
+		Agent currentPlayer = getNextPlayer(position);
+		while (!allBetsEqual() && (highestBetter != currentPlayer)) {
+			
+			ActionEnum action = currentPlayer.getMove(this);
+			
+			int currentBet = currentPlayer.getBetAmount(action);
 
+			
+			if(ActionEnum.needsAmount(action)) {
+				System.out.println(ActionEnum.toString(action) + " " + currentBet);
+			} else {
+				System.out.println(ActionEnum.toString(action));
+			}
+
+
+			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
+
+			if (action == ActionEnum.FOLD) {
+
+				removePlayerFromPot(currentPlayer);
+			} else if (action == ActionEnum.CALL) {
+
+				currentPlayer.setBet(highestBet);
+				pot += highestBet - currentBet;
+			} else if (action == ActionEnum.CHECK) {
+				if (highestBet != currentBet) {
+					position--;
+					System.out.println("You do not have the sufficent chips played to check.");
+				}
+			} else if (action == ActionEnum.BET) {
+				if (highestBet == BIG_BLIND && (currentBet - BIG_BLIND * 2) >= 0) {
+
+					currentPlayer.setBet(currentBet);
+					highestBet = currentBet;
+					pot += highestBet;
+					highestBetter = currentPlayer;
+				} else {
+
+					position--;
+					System.out.println(
+							"You can only bet when it is the first time increasing amount. You can try raising.");
+				}
+			} else if (action == ActionEnum.RAISE) {
+				if (highestBet != BIG_BLIND && (currentBet - highestBet * 2) >= 0) {
+
+					currentPlayer.setBet(currentBet);
+					highestBet = currentBet;
+					pot += highestBet;
+					highestBetter = currentPlayer;
+				} else {
+
+					position--;
+					if ((currentBet - highestBet * 2) < 0) {
+
+						System.out.println(
+								"You need to increase the size of the raise to at least the current highest bet times 2");
+					} else if (highestBet == BIG_BLIND) {
+
+						System.out.println(
+								"You can only raise when there has already been a bet placed. Try again but place a bet.");
+					}
+				}
+			}
+			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
+			position++;
+			currentPlayer = getNextPlayer(position);
+		}
+	}
+	
+	public void dollPot(Agent winner) {
+		winner.addChips(pot);
+		round = Round.PREFLOP;
+		playersInHand = players;
+		bigBlind = (bigBlind + 1) % numPlayers;
+		highestBet = BIG_BLIND;
+		highestBetter = getBigBlind();
+		pot = BIG_BLIND + SMALL_BLIND;
+	}
+	
+	public Agent findWinner() {
+		if(numPlayersInHand <= 1) return playersInHand.get(0);
+		Card[] joined = new Card[COMMUNITY_SIZE + HAND_SIZE];
+		for(int i = 0; i < COMMUNITY_SIZE; i++) {
+			joined[i] = community[i];
+		}
+		HashMap<Agent, Integer> ranks = new HashMap<>();
+		for(Agent player : playersInHand) {
+			Card[] hand = player.getHand();
+			for(int i = 0; i < HAND_SIZE; i++) {
+				joined[i+COMMUNITY_SIZE] = hand[i];
+			}
+			//HashSet<Card> joinedSet = new HashSet<>(Arrays.asList(joined));
+			ranks.put(player, computeRank(joined));	
+		}
+		List<Agent> bestPlayers = bestHands(ranks);
+		
+		return null;
+	}
+	
+	/*
+	 * + 10 - Royal Flush
+	 * + 9 - Straight Flush
+	 * 8 - Four of a kind
+	 * 7 - Full House
+	 * + 6 - Flush
+	 * + 5 - Straight
+	 * 4 - Trips
+	 * 3 - Two Pair
+	 * 2 - Pair
+	 * 1 - High
+	 */
+	
+	private List<Agent> bestHands(HashMap<Agent, Integer> ranks) {
+		ArrayList<Agent> bestPlayers = new ArrayList<>();
+		int max = ranks.get(playersInHand.get(0));
+		for(Agent player : ranks.keySet()) {
+			int comp = ranks.get(player);
+			if(comp > max) max = comp;
+		}
+		for(Agent player : ranks.keySet()) {
+			if(ranks.get(player) == max) {
+				bestPlayers.add(player);
+			}
+		}
+		return bestPlayers;
+	}
+	
+	private boolean isFlush(Card[] joined, List<SuitEnum> suits) {
+		if(suits.isEmpty()) {
+			return false;
+		}
+		Card[] filtered = (Card[]) Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0)).collect(Collectors.toList()).toArray();
+		if(filtered.length >= 5) {
+			return true;
+		}
+		return isFlush(joined, suits.subList(1, suits.size()));
+	}
+	
+	private boolean isStraight(List<Integer> joined, List<Integer> allCardNums) {
+		if(allCardNums.size() < COMMUNITY_SIZE) {
+			return false;
+		}
+		if(joined.containsAll(allCardNums.subList(0, COMMUNITY_SIZE))) {
+			return true;
+		}
+		return isStraight(joined, allCardNums.subList(1, allCardNums.size()));
+	}
+	
+	private boolean isPair(List<Integer> joined, int match) {
+		if(joined.isEmpty()) {
+			return false;
+		}
+		if(joined.get(0) == match) {
+			return true;
+		}
+		return null;
+	}
+	
+	private int computeRank(Card[] joined) {
+		// Check Flushes
+		List<Integer> sortedCards = CardEnum.sortCards(Arrays.asList(joined));
+		if(isFlush(joined, SuitEnum.allSuits())) {
+			if(isStraight(sortedCards, CardEnum.allCardEnums())) {
+				if(sortedCards.containsAll(CardEnum.allCardEnums().subList(10, 15))) {
+					return 10;
+				}
+				return 9;
+			}
+			return 6;
+		}
+		if(isStraight(sortedCards, CardEnum.allCardEnums())) {
+			return 5;
+		}
+		return null;
+		
 	}
 
 	private boolean allBetsEqual() {
 		for (Agent player : playersInHand) {
-			if (player.getBetAmount() < highestBet) {
+			if (player.getBet() < highestBet) {
 				return false;
 			}
 		}
@@ -144,8 +313,13 @@ public class Dealer {
 		return numPlayers <= 1;
 	}
 
-	public void removePlayer(Agent player) {
+	public void removePlayerFromPot(Agent player) {
 		playersInHand.remove(player);
+		numPlayersInHand--;
+	}
+	
+	public void removePlayerFromGame(Agent player) {
+		players.remove(player);
 		numPlayers--;
 	}
 
@@ -159,7 +333,7 @@ public class Dealer {
 	}
 
 	public Agent getNextPlayer(int offset) {
-		return playersInHand.get((bigBlind + offset) % numPlayers);
+		return playersInHand.get((bigBlind + offset) % numPlayersInHand);
 	}
 
 	public Agent getBigBlind() {
@@ -167,11 +341,11 @@ public class Dealer {
 	}
 
 	public Agent getSmallBlind() {
-		return playersInHand.get((bigBlind + numPlayers - 1) % numPlayers);
+		return playersInHand.get((bigBlind + numPlayersInHand - 1) % numPlayersInHand);
 	}
 
 	public Agent getButton() {
-		return playersInHand.get((bigBlind + numPlayers - 2) % numPlayers);
+		return playersInHand.get((bigBlind + numPlayersInHand - 2) % numPlayersInHand);
 	}
 
 	public Agent getHighestBetter() {
@@ -182,21 +356,6 @@ public class Dealer {
 		return players;
 	}
 	
-	public ActionEnum getAction(String action) {
-
-		if (action.toLowerCase().equals("call"))
-			return ActionEnum.CALL;
-		else if (action.toLowerCase().equals("bet"))
-			return ActionEnum.BET;
-		else if (action.toLowerCase().equals("raise"))
-			return ActionEnum.RAISE;
-		else if (action.toLowerCase().equals("check"))
-			return ActionEnum.CHECK;
-		else if (action.toLowerCase().equals("fold"))
-			return ActionEnum.FOLD;
-		else
-			return ActionEnum.INVALID;
-		
-	}
+	
 
 }

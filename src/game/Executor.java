@@ -25,22 +25,22 @@ public class Executor {
 		exec.runGame(players);
 	}
 	
-	public void runGame(List<Agent> players)
-	{
+	public void runGame(List<Agent> players) {
 		Dealer dealer = new Dealer(players);
-		dealer.deal();
-		dealer.playRound();
-		while(!dealer.isGameOver())
-		{
-			for(Agent player : players)
-			{
-				player.printHand();
-				player.printBetAmount();
+
+		while (!dealer.isGameOver()) {
+			dealer.deal();
+			while (!dealer.isPotOver()) {
+				dealer.playRound();
 			}
-			
-			// TODO: remove this when done testing
-			dealer.playRound();
+			Agent winner = dealer.findWinner();
+			dealer.dollPot(winner);
+			for (Agent player : players) {
+				if (player.getChips() == 0) {
+					dealer.removePlayerFromGame(player);
+				}
+			}
 		}
-		
+
 	}
 }
