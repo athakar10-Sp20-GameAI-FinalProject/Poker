@@ -2,15 +2,15 @@ package game;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Scanner;
 import java.util.stream.Collectors;
 
 import agent.Agent;
 
 public class Dealer {
-	
+
 	private enum Round {
 		PREFLOP, FLOP, TURN, RIVER;
 	}
@@ -31,7 +31,6 @@ public class Dealer {
 	private Round round;
 	private int pot;
 	private Card[] community;
-	private final Scanner sc = new Scanner(System.in);
 
 	public Dealer(List<Agent> players) {
 		deck = new Deck();
@@ -46,7 +45,7 @@ public class Dealer {
 		pot = BIG_BLIND + SMALL_BLIND;
 		round = Round.PREFLOP;
 	}
-	
+
 	public Dealer makeCopy() {
 		Dealer ret = new Dealer(players);
 		ret.deck = deck;
@@ -61,14 +60,14 @@ public class Dealer {
 		ret.numPlayersInHand = numPlayersInHand;
 		return ret;
 	}
-	
+
 	public boolean isPotOver() {
 		return numPlayersInHand <= 1;
 	}
-	
+
 	public List<ActionEnum> getValidActions(Agent player) {
 		List<ActionEnum> moves = new ArrayList<>(7);
-		
+
 		// TODO: add logic
 		moves.add(ActionEnum.BET);
 		moves.add(ActionEnum.FOLD);
@@ -79,64 +78,63 @@ public class Dealer {
 	}
 
 	public void playRound() {
-		switch(round) {
-			case PREFLOP: 
-				System.out.println("PRE FLOP");
-				getBigBlind().setBlind(BIG_BLIND);
-				getSmallBlind().setBlind(SMALL_BLIND);
-				parseActions(1);
-				round = Round.FLOP;
+		switch (round) {
+		case PREFLOP:
+			System.out.println("PRE FLOP");
+			getBigBlind().setBlind(BIG_BLIND);
+			getSmallBlind().setBlind(SMALL_BLIND);
+			parseActions(1);
+			round = Round.FLOP;
 			break;
-			case FLOP:
-				System.out.println("FLOP");
-				for(int i = 0; i < COMMUNITY_SIZE - 2; i++) {
-					community[i] = deck.draw();
-				}
-				printCommunity();
-				parseActions(-2);
-				round = Round.TURN;
+		case FLOP:
+			System.out.println("FLOP");
+			for (int i = 0; i < COMMUNITY_SIZE - 2; i++) {
+				community[i] = deck.draw();
+			}
+			printCommunity();
+			parseActions(-2);
+			round = Round.TURN;
 			break;
-			case TURN:
-				System.out.println("TURN");
-				community[3] = deck.draw();
-				printCommunity();
-				parseActions(-2);
-				round = Round.RIVER;
+		case TURN:
+			System.out.println("TURN");
+			community[3] = deck.draw();
+			printCommunity();
+			parseActions(-2);
+			round = Round.RIVER;
 			break;
-			case RIVER:
-				System.out.println("RIVER");
-				community[4] = deck.draw();
-				printCommunity();
-				parseActions(-2);
+		case RIVER:
+			System.out.println("RIVER");
+			community[4] = deck.draw();
+			printCommunity();
+			parseActions(-2);
 			break;
-			default: System.out.println("ERROR in dealer");
+		default:
+			System.out.println("ERROR in dealer");
 		}
 	}
-	
+
 	private void printCommunity() {
-		for(Card c : community) {
-			if(c != null) {
+		for (Card c : community) {
+			if (c != null) {
 				System.out.print(c.getName() + " ");
 			}
 		}
 		System.out.println();
 	}
-	
+
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
 		while (!allBetsEqual() && (highestBetter != currentPlayer)) {
-			
+
 			ActionEnum action = currentPlayer.getMove(this);
-			
+
 			int currentBet = currentPlayer.getBetAmount(action);
 
-			
-			if(ActionEnum.needsAmount(action)) {
+			if (ActionEnum.needsAmount(action)) {
 				System.out.println(ActionEnum.toString(action) + " " + currentBet);
 			} else {
 				System.out.println(ActionEnum.toString(action));
 			}
-
 
 			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
 
@@ -191,7 +189,7 @@ public class Dealer {
 			currentPlayer = getNextPlayer(position);
 		}
 	}
-	
+
 	public void dollPot(Agent winner) {
 		winner.addChips(pot);
 		round = Round.PREFLOP;
@@ -201,103 +199,245 @@ public class Dealer {
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
 	}
-	
+
 	public Agent findWinner() {
-		if(numPlayersInHand <= 1) return playersInHand.get(0);
+		if (numPlayersInHand <= 1)
+			return playersInHand.get(0);
 		Card[] joined = new Card[COMMUNITY_SIZE + HAND_SIZE];
-		for(int i = 0; i < COMMUNITY_SIZE; i++) {
+		for (int i = 0; i < COMMUNITY_SIZE; i++) {
 			joined[i] = community[i];
 		}
 		HashMap<Agent, Integer> ranks = new HashMap<>();
-		for(Agent player : playersInHand) {
+		for (Agent player : playersInHand) {
 			Card[] hand = player.getHand();
-			for(int i = 0; i < HAND_SIZE; i++) {
-				joined[i+COMMUNITY_SIZE] = hand[i];
+			for (int i = 0; i < HAND_SIZE; i++) {
+				joined[i + COMMUNITY_SIZE] = hand[i];
 			}
-			//HashSet<Card> joinedSet = new HashSet<>(Arrays.asList(joined));
-			ranks.put(player, computeRank(joined));	
+			// HashSet<Card> joinedSet = new HashSet<>(Arrays.asList(joined));
+			ranks.put(player, computeRank(joined));
 		}
 		List<Agent> bestPlayers = bestHands(ranks);
-		
-		return null;
+
+		if (bestPlayers.size() > 1) {
+			return highestValueHand(bestPlayers, joined);
+		}
+
+		return bestPlayers.get(0);
 	}
-	
+
 	/*
-	 * + 10 - Royal Flush
-	 * + 9 - Straight Flush
-	 * 8 - Four of a kind
-	 * 7 - Full House
-	 * + 6 - Flush
-	 * + 5 - Straight
-	 * 4 - Trips
-	 * 3 - Two Pair
-	 * 2 - Pair
-	 * 1 - High
+	 * + 10 - Royal Flush + 9 - Straight Flush ++ 8 - Four of a kind + 7 - Full
+	 * House + 6 - Flush + 5 - Straight ++ 4 - Trips + 3 - Two Pair ++ 2 - Pair + 1
+	 * - High
 	 */
-	
+
+	private Agent highestValueHand(List<Agent> players, Card[] joined) {
+
+		Agent bestPlayer = null;
+		int highestScore = Integer.MIN_VALUE;
+
+		Card[] hand = players.get(0).getHand();
+		for (int i = 0; i < HAND_SIZE; i++) {
+			joined[i + COMMUNITY_SIZE] = hand[i];
+		}
+		int handType = computeRank(joined);
+
+		switch (handType) {
+		case 8:
+		case 4:
+		case 2: {
+			int pairedCardsValue;
+			for (Agent player : players) {
+
+				hand = player.getHand();
+				for (int i = 0; i < HAND_SIZE; i++) {
+					joined[i + COMMUNITY_SIZE] = hand[i];
+				}
+
+				pairedCardsValue = onlyDuplicates(CardEnum.sortCards(Arrays.asList(joined)), Collections.emptyList())
+						.stream().reduce(0, (a, b) -> a + b);
+
+				if (pairedCardsValue > highestScore) {
+					highestScore = pairedCardsValue;
+					bestPlayer = player;
+				}
+
+			}
+		}
+			break;
+
+		case 7:
+		case 3: {
+
+			List<List<Integer>> hands = new ArrayList<List<Integer>>();
+
+			for (Agent player : players) {
+
+				hand = player.getHand();
+				for (int i = 0; i < HAND_SIZE; i++) {
+					joined[i + COMMUNITY_SIZE] = hand[i];
+				}
+
+				hands.add(onlyDuplicates(CardEnum.sortCards(Arrays.asList(joined)), Collections.emptyList()));
+
+			}
+		}
+
+			break;
+
+		case 6: {
+
+			hand = players.get(0).getHand();
+			for (int i = 0; i < HAND_SIZE; i++) {
+				joined[i + COMMUNITY_SIZE] = hand[i];
+			}
+
+			SuitEnum flushSuit = Card.getSameSuit(joined, SuitEnum.allSuits());
+
+			for (Agent player : players) {
+				for (Card card : player.getHand()) {
+					if (card.getSuit() == flushSuit) {
+						Card[] temp = new Card[1];
+						temp[0] = card;
+						List<Integer> values = CardEnum.sortCards(Arrays.asList(temp));
+						if (values.size() > 1) {
+							highestScore = 14;
+							bestPlayer = player;
+						}
+
+						if (values.get(0) > highestScore) {
+							highestScore = values.get(0);
+							bestPlayer = player;
+
+						}
+					}
+				}
+			}
+
+		}
+
+			break;
+
+		}
+		return bestPlayer;
+	}
+
+	private List<Integer> onlyDuplicates(List<Integer> joined, List<Integer> duplicates) {
+
+		if (joined.isEmpty()) {
+			return duplicates;
+		}
+
+		int first = joined.get(0);
+
+		if (joined.contains(first) || duplicates.contains(first)) {
+			duplicates.add(first);
+		}
+		return onlyDuplicates(joined.subList(1, joined.size()), duplicates);
+	}
+
 	private List<Agent> bestHands(HashMap<Agent, Integer> ranks) {
 		ArrayList<Agent> bestPlayers = new ArrayList<>();
 		int max = ranks.get(playersInHand.get(0));
-		for(Agent player : ranks.keySet()) {
+		for (Agent player : ranks.keySet()) {
 			int comp = ranks.get(player);
-			if(comp > max) max = comp;
+			if (comp > max)
+				max = comp;
 		}
-		for(Agent player : ranks.keySet()) {
-			if(ranks.get(player) == max) {
+		for (Agent player : ranks.keySet()) {
+			if (ranks.get(player) == max) {
 				bestPlayers.add(player);
 			}
 		}
 		return bestPlayers;
 	}
-	
+
 	private boolean isFlush(Card[] joined, List<SuitEnum> suits) {
-		if(suits.isEmpty()) {
+		if (suits.isEmpty()) {
 			return false;
 		}
-		Card[] filtered = (Card[]) Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0)).collect(Collectors.toList()).toArray();
-		if(filtered.length >= 5) {
+		Card[] filtered = (Card[]) Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0))
+				.collect(Collectors.toList()).toArray();
+		if (filtered.length >= 5) {
 			return true;
 		}
 		return isFlush(joined, suits.subList(1, suits.size()));
 	}
-	
+
 	private boolean isStraight(List<Integer> joined, List<Integer> allCardNums) {
-		if(allCardNums.size() < COMMUNITY_SIZE) {
+		if (allCardNums.size() < COMMUNITY_SIZE) {
 			return false;
 		}
-		if(joined.containsAll(allCardNums.subList(0, COMMUNITY_SIZE))) {
+		if (joined.containsAll(allCardNums.subList(0, COMMUNITY_SIZE))) {
 			return true;
 		}
 		return isStraight(joined, allCardNums.subList(1, allCardNums.size()));
 	}
-	
-	private boolean isPair(List<Integer> joined, int match) {
-		if(joined.isEmpty()) {
-			return false;
-		}
-		if(joined.get(0) == match) {
+
+	private boolean isMatchingCard(List<Integer> joined, int match, int required, int count) {
+		if (count == 0) {
 			return true;
 		}
-		return null;
+		if (joined.isEmpty()) {
+			return false;
+		}
+		if (joined.get(0) == match) {
+			return isMatchingCard(joined.subList(1, joined.size()), joined.get(0), required, count - 1);
+		}
+		return isMatchingCard(joined.subList(1, joined.size()), joined.get(0), required, required);
 	}
-	
+
+	private boolean hasTwoPairs(List<Integer> joined, int match, int required) {
+		if (required == 0) {
+			return true;
+		}
+		if (joined.isEmpty()) {
+			return false;
+		}
+		if (joined.get(0) == match) {
+			return hasTwoPairs(joined.subList(1, joined.size()), -1, required - 1);
+		}
+
+		return hasTwoPairs(joined.subList(1, joined.size()), joined.get(0), required - 1);
+	}
+
 	private int computeRank(Card[] joined) {
-		// Check Flushes
 		List<Integer> sortedCards = CardEnum.sortCards(Arrays.asList(joined));
-		if(isFlush(joined, SuitEnum.allSuits())) {
-			if(isStraight(sortedCards, CardEnum.allCardEnums())) {
-				if(sortedCards.containsAll(CardEnum.allCardEnums().subList(10, 15))) {
-					return 10;
+		if (isFlush(joined, SuitEnum.allSuits())) {
+			if (isStraight(sortedCards, CardEnum.allCardEnums())) {
+				if (sortedCards.containsAll(CardEnum.allCardEnums().subList(10, 15))) {
+					return 10; // Royal Flush
 				}
-				return 9;
+				return 9; // Straight Flush
 			}
-			return 6;
+			return 6; // Flush
 		}
-		if(isStraight(sortedCards, CardEnum.allCardEnums())) {
-			return 5;
+
+		if (isMatchingCard(sortedCards, -1, 2, 2)) {
+			if (isMatchingCard(sortedCards, -1, 4, 4)) {
+				return 8; // Four of a Kind
+			}
+
+			if (isMatchingCard(sortedCards, -1, 3, 3)) {
+				if (hasTwoPairs(sortedCards, -1, 2)) {
+					return 7; // Full House
+				}
+				return 4; // Triple
+			}
+
+			if (hasTwoPairs(sortedCards, -1, 2)) { // Two Pair
+				return 3; // Two Pair
+			}
+			return 2; // Pair
+
 		}
-		return null;
-		
+
+		if (isStraight(sortedCards, CardEnum.allCardEnums())) {
+			return 5; // Straight
+		}
+
+		return 1; // High Card
+
 	}
 
 	private boolean allBetsEqual() {
@@ -317,7 +457,7 @@ public class Dealer {
 		playersInHand.remove(player);
 		numPlayersInHand--;
 	}
-	
+
 	public void removePlayerFromGame(Agent player) {
 		players.remove(player);
 		numPlayers--;
@@ -355,7 +495,5 @@ public class Dealer {
 	public List<Agent> getPlayers() {
 		return players;
 	}
-	
-	
 
 }

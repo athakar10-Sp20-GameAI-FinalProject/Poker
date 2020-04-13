@@ -30,6 +30,7 @@ public class Executor {
 
 		while (!dealer.isGameOver()) {
 			dealer.deal();
+			
 			while (!dealer.isPotOver()) {
 				dealer.playRound();
 			}
