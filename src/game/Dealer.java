@@ -30,6 +30,7 @@ public class Dealer {
 	private Agent highestBetter;
 	private Round round;
 	private int pot;
+	private boolean startRound;
 	private Card[] community;
 
 	public Dealer(List<Agent> players) {
@@ -44,6 +45,7 @@ public class Dealer {
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
 		round = Round.PREFLOP;
+		startRound = true;
 	}
 
 	public Dealer makeCopy() {
@@ -58,6 +60,7 @@ public class Dealer {
 		ret.pot = pot;
 		ret.community = community;
 		ret.numPlayersInHand = numPlayersInHand;
+		ret.startRound = startRound;
 		return ret;
 	}
 
@@ -83,6 +86,7 @@ public class Dealer {
 			System.out.println("PRE FLOP");
 			getBigBlind().setBlind(BIG_BLIND);
 			getSmallBlind().setBlind(SMALL_BLIND);
+			startRound = true;
 			parseActions(1);
 			round = Round.FLOP;
 			break;
@@ -92,6 +96,7 @@ public class Dealer {
 				community[i] = deck.draw();
 			}
 			printCommunity();
+			startRound = true;
 			parseActions(-2);
 			round = Round.TURN;
 			break;
@@ -99,6 +104,7 @@ public class Dealer {
 			System.out.println("TURN");
 			community[3] = deck.draw();
 			printCommunity();
+			startRound = true;
 			parseActions(-2);
 			round = Round.RIVER;
 			break;
@@ -106,6 +112,7 @@ public class Dealer {
 			System.out.println("RIVER");
 			community[4] = deck.draw();
 			printCommunity();
+			startRound = true;
 			parseActions(-2);
 			break;
 		default:
@@ -124,7 +131,7 @@ public class Dealer {
 
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
-		while (!allBetsEqual() && (highestBetter != currentPlayer)) {
+		while (!allBetsEqual() && (highestBetter != currentPlayer) || startRound) {
 
 			ActionEnum action = currentPlayer.getMove(this);
 
@@ -183,7 +190,10 @@ public class Dealer {
 								"You can only raise when there has already been a bet placed. Try again but place a bet.");
 					}
 				}
+			} else {
+				position--;
 			}
+			startRound = false;
 			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
 			position++;
 			currentPlayer = getNextPlayer(position);
@@ -191,6 +201,7 @@ public class Dealer {
 	}
 
 	public void dollPot(Agent winner) {
+
 		winner.addChips(pot);
 		round = Round.PREFLOP;
 		playersInHand = players;
@@ -226,9 +237,9 @@ public class Dealer {
 	}
 
 	/*
-	 * + 10 - Royal Flush + 9 - Straight Flush ++ 8 - Four of a kind + 7 - Full
-	 * House + 6 - Flush + 5 - Straight ++ 4 - Trips + 3 - Two Pair ++ 2 - Pair + 1
-	 * - High
+	 * + 10 - Royal Flush + 9 - Straight Flush ++ 8 - Four of a kind ++ 7 - Full
+	 * House ++ 6 - Flush + 5 - Straight ++ 4 - Trips ++ 3 - Two Pair ++ 2 - Pair ++
+	 * 1 - High
 	 */
 
 	private Agent highestValueHand(List<Agent> players, Card[] joined) {
@@ -269,7 +280,9 @@ public class Dealer {
 		case 7:
 		case 3: {
 
-			List<List<Integer>> hands = new ArrayList<List<Integer>>();
+			List<Integer> matchingCards;
+			int highestFirstMatch = -1;
+			int highestSecondMatch = -1;
 
 			for (Agent player : players) {
 
@@ -278,8 +291,37 @@ public class Dealer {
 					joined[i + COMMUNITY_SIZE] = hand[i];
 				}
 
-				hands.add(onlyDuplicates(CardEnum.sortCards(Arrays.asList(joined)), Collections.emptyList()));
-
+				matchingCards = onlyDuplicates(CardEnum.sortCards(Arrays.asList(joined)), Collections.emptyList());
+				
+				int firstOccurance = 0;
+				int firstMatch, secondMatch; // firstMatch can be triple for fullHouse
+				
+				for(int i = 0; i < matchingCards.size(); i++) {
+					int checker = matchingCards.get(0);
+					if(matchingCards.get(i) == checker) {
+						firstOccurance++;
+					}
+				}
+				
+				if(firstOccurance == 2) {
+					firstMatch = matchingCards.get(matchingCards.size() - 1);
+					secondMatch = matchingCards.get(0);
+				} else {
+					secondMatch = matchingCards.get(matchingCards.size() - 1);
+					firstMatch = matchingCards.get(0);
+				}
+				
+				if(firstMatch > highestFirstMatch) {
+					bestPlayer = player;
+					highestFirstMatch = firstMatch;
+					highestSecondMatch = secondMatch;
+				} else if(firstMatch == highestFirstMatch && secondMatch > highestSecondMatch) {
+					bestPlayer = player;
+					highestFirstMatch = firstMatch;
+					highestSecondMatch = secondMatch;
+				}
+				
+				
 			}
 		}
 
@@ -317,11 +359,64 @@ public class Dealer {
 		}
 
 			break;
+			
+		case 5: {
+			
+			for(Agent player : players) {
+				
+				hand = players.get(0).getHand();
+				for (int i = 0; i < HAND_SIZE; i++) {
+					joined[i + COMMUNITY_SIZE] = hand[i];
+				}
+				
+				int value = findStraightValue(CardEnum.sortCards(Arrays.asList(joined)));
+				
+				if(value > highestScore) {
+					highestScore = value;
+					bestPlayer = player;
+				}
+				
+			}
+		}
+			
+		break;
+		
+		case 1: {
+			
+			for(Agent player : players) {
+				for(Card card : player.getHand()) {
+					Card[] temp = new Card[1];
+					temp[0] = card;
+					List<Integer> value = CardEnum.sortCards(Arrays.asList(temp));
+					if (value.size() == 2) {
+						return player;
+					}
 
+					if (value.get(0) > highestScore) {
+						bestPlayer = player;
+						highestScore = value.get(0);
+					}
+				}
+			}
+		}
+
+			break;
 		}
 		return bestPlayer;
 	}
 
+	private int findStraightValue(List<Integer> joined){
+		
+		List<Integer> straight = joined.subList(0,5);
+		int value = (straight.stream().reduce(0, (a, b) -> a + b) / COMMUNITY_SIZE);
+		
+		if(value == straight.get(2)) {
+			return value;
+		}
+		
+		return findStraightValue(joined.subList(1,joined.size()));
+	}
+	
 	private List<Integer> onlyDuplicates(List<Integer> joined, List<Integer> duplicates) {
 
 		if (joined.isEmpty()) {
@@ -473,7 +568,7 @@ public class Dealer {
 	}
 
 	public Agent getNextPlayer(int offset) {
-		return playersInHand.get((bigBlind + offset) % numPlayersInHand);
+		return playersInHand.get((bigBlind + offset + numPlayersInHand) % numPlayersInHand);
 	}
 
 	public Agent getBigBlind() {
