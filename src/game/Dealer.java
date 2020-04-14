@@ -31,6 +31,7 @@ public class Dealer {
 	private Round round;
 	private int pot;
 	private boolean startRound;
+	private boolean lastNotPlayed;
 	private Card[] community;
 
 	public Dealer(List<Agent> players) {
@@ -46,6 +47,7 @@ public class Dealer {
 		pot = BIG_BLIND + SMALL_BLIND;
 		round = Round.PREFLOP;
 		startRound = true;
+		lastNotPlayed = true;
 	}
 
 	public Dealer makeCopy() {
@@ -61,6 +63,7 @@ public class Dealer {
 		ret.community = community;
 		ret.numPlayersInHand = numPlayersInHand;
 		ret.startRound = startRound;
+		ret.lastNotPlayed = lastNotPlayed;
 		return ret;
 	}
 
@@ -131,8 +134,10 @@ public class Dealer {
 
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
-		while (!allBetsEqual() && (highestBetter != currentPlayer) || startRound) {
+		while (!allBetsEqual() && (highestBetter != currentPlayer) && lastNotPlayed || startRound) {
 
+			System.out.println(players.indexOf(currentPlayer) + " " + currentPlayer.getBet());
+			
 			ActionEnum action = currentPlayer.getMove(this);
 
 			int currentBet = currentPlayer.getBetAmount(action);
@@ -148,6 +153,7 @@ public class Dealer {
 			if (action == ActionEnum.FOLD) {
 
 				removePlayerFromPot(currentPlayer);
+				position--;
 			} else if (action == ActionEnum.CALL) {
 
 				currentPlayer.setBet(highestBet);
@@ -196,7 +202,14 @@ public class Dealer {
 			startRound = false;
 			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
 			position++;
+			
+			if ((currentPlayer == getBigBlind() && round == Round.PREFLOP)
+					|| (currentPlayer == getButton() && round != Round.PREFLOP)) {
+				lastNotPlayed = false;
+			}
+			
 			currentPlayer = getNextPlayer(position);
+			
 		}
 	}
 
