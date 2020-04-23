@@ -17,6 +17,7 @@ public class Card {
 		this.card = card;
 		this.suit = suit;
 	}
+	
 
 	public static SuitEnum getSameSuit(Card[] joined, List<SuitEnum> suits) {
 

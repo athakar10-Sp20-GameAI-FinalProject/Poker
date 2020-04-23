@@ -31,7 +31,7 @@ public class Dealer {
 	private Round round;
 	private int pot;
 	private boolean startRound;
-	private boolean lastNotPlayed;
+	private ArrayList<Boolean> havePlayed;
 	private Card[] community;
 
 	public Dealer(List<Agent> players) {
@@ -47,7 +47,10 @@ public class Dealer {
 		pot = BIG_BLIND + SMALL_BLIND;
 		round = Round.PREFLOP;
 		startRound = true;
-		lastNotPlayed = true;
+		havePlayed = new ArrayList<Boolean>();
+		for(Agent p : players) {
+			havePlayed.add(false);
+		}
 	}
 
 	public Dealer makeCopy() {
@@ -63,7 +66,7 @@ public class Dealer {
 		ret.community = community;
 		ret.numPlayersInHand = numPlayersInHand;
 		ret.startRound = startRound;
-		ret.lastNotPlayed = lastNotPlayed;
+		ret.havePlayed = havePlayed;
 		return ret;
 	}
 
@@ -82,13 +85,39 @@ public class Dealer {
 		moves.add(ActionEnum.CALL);
 		return moves;
 	}
+	
+	private void resetBets() {
+		for(Agent player: players) {
+			player.setBet(0);
+		}
+	}
+	
+	private void resetHavePlayed() {
+		for(int i = 0; i < havePlayed.size(); i++) {
+			havePlayed.set(i, false);
+		}
+	}
+	
+	private boolean allPlayed() {
+		for(Boolean b : havePlayed) {
+			if(!b) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	public void playRound() {
+		resetBets();
+		highestBet = 0;
+		highestBetter = getButton();
 		switch (round) {
 		case PREFLOP:
 			System.out.println("PRE FLOP");
 			getBigBlind().setBlind(BIG_BLIND);
 			getSmallBlind().setBlind(SMALL_BLIND);
+			highestBetter = getBigBlind();
+			highestBet = BIG_BLIND;
 			startRound = true;
 			parseActions(1);
 			round = Round.FLOP;
@@ -100,7 +129,7 @@ public class Dealer {
 			}
 			printCommunity();
 			startRound = true;
-			parseActions(-2);
+			parseActions(-1);
 			round = Round.TURN;
 			break;
 		case TURN:
@@ -108,7 +137,7 @@ public class Dealer {
 			community[3] = deck.draw();
 			printCommunity();
 			startRound = true;
-			parseActions(-2);
+			parseActions(-1);
 			round = Round.RIVER;
 			break;
 		case RIVER:
@@ -116,7 +145,7 @@ public class Dealer {
 			community[4] = deck.draw();
 			printCommunity();
 			startRound = true;
-			parseActions(-2);
+			parseActions(-1);
 			break;
 		default:
 			System.out.println("ERROR in dealer");
@@ -134,9 +163,9 @@ public class Dealer {
 
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
-		while (!allBetsEqual() && (highestBetter != currentPlayer) && lastNotPlayed || startRound) {
+		while ((!allBetsEqual() && allPlayed()) || startRound) {
 
-			System.out.println(players.indexOf(currentPlayer) + " " + currentPlayer.getBet());
+			System.out.println("Current player and their bet: " + players.indexOf(currentPlayer) + " " + currentPlayer.getBet());
 			
 			ActionEnum action = currentPlayer.getMove(this);
 
@@ -155,17 +184,25 @@ public class Dealer {
 				removePlayerFromPot(currentPlayer);
 				position--;
 			} else if (action == ActionEnum.CALL) {
-
+				havePlayed.set(players.indexOf(currentPlayer), true);
 				currentPlayer.setBet(highestBet);
 				pot += highestBet - currentBet;
 			} else if (action == ActionEnum.CHECK) {
 				if (highestBet != currentBet) {
 					position--;
 					System.out.println("You do not have the sufficent chips played to check.");
+				} else {
+					havePlayed.set(players.indexOf(currentPlayer), true);
 				}
 			} else if (action == ActionEnum.BET) {
-				if (highestBet == BIG_BLIND && (currentBet - BIG_BLIND * 2) >= 0) {
-
+				if (highestBet == BIG_BLIND && (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
+					for(int i = 0; i < havePlayed.size(); i++) {
+						if(i != players.indexOf(currentPlayer)) {
+							havePlayed.set(i, false);
+						} else {
+							havePlayed.set(i, true);
+						}
+					}
 					currentPlayer.setBet(currentBet);
 					highestBet = currentBet;
 					pot += highestBet;
@@ -178,7 +215,13 @@ public class Dealer {
 				}
 			} else if (action == ActionEnum.RAISE) {
 				if (highestBet != BIG_BLIND && (currentBet - highestBet * 2) >= 0) {
-
+					for(int i = 0; i < havePlayed.size(); i++) {
+						if(i != players.indexOf(currentPlayer)) {
+							havePlayed.set(i, false);
+						} else {
+							havePlayed.set(i, true);
+						}
+					}
 					currentPlayer.setBet(currentBet);
 					highestBet = currentBet;
 					pot += highestBet;
@@ -202,11 +245,6 @@ public class Dealer {
 			startRound = false;
 			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
 			position++;
-			
-			if ((currentPlayer == getBigBlind() && round == Round.PREFLOP)
-					|| (currentPlayer == getButton() && round != Round.PREFLOP)) {
-				lastNotPlayed = false;
-			}
 			
 			currentPlayer = getNextPlayer(position);
 			
@@ -562,6 +600,7 @@ public class Dealer {
 	}
 
 	public void removePlayerFromPot(Agent player) {
+		havePlayed.remove(playersInHand.indexOf(player));
 		playersInHand.remove(player);
 		numPlayersInHand--;
 	}
