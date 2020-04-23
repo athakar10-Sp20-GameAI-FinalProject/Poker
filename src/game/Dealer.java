@@ -71,7 +71,7 @@ public class Dealer {
 	}
 
 	public boolean isPotOver() {
-		return numPlayersInHand <= 1;
+		return numPlayersInHand <= 1 || round == Round.PREFLOP;
 	}
 
 	public List<ActionEnum> getValidActions(Agent player) {
@@ -109,6 +109,7 @@ public class Dealer {
 
 	public void playRound() {
 		resetBets();
+		resetHavePlayed();
 		highestBet = 0;
 		highestBetter = getButton();
 		switch (round) {
@@ -146,6 +147,7 @@ public class Dealer {
 			printCommunity();
 			startRound = true;
 			parseActions(-1);
+			round = Round.PREFLOP;
 			break;
 		default:
 			System.out.println("ERROR in dealer");
@@ -163,9 +165,9 @@ public class Dealer {
 
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
-		while ((!allBetsEqual() && allPlayed()) || startRound) {
+		while (!(allBetsEqual() && allPlayed()) || startRound) {
 
-			System.out.println("Current player and their bet: " + players.indexOf(currentPlayer) + " " + currentPlayer.getBet());
+			System.out.println("Current player and their bet: " + playersInHand.indexOf(currentPlayer) + " " + currentPlayer.getBet());
 			
 			ActionEnum action = currentPlayer.getMove(this);
 
@@ -179,25 +181,29 @@ public class Dealer {
 
 			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
 
+			for(Boolean b : havePlayed) System.out.print(b + " ");
+			System.out.println();
+			
 			if (action == ActionEnum.FOLD) {
 
 				removePlayerFromPot(currentPlayer);
 				position--;
 			} else if (action == ActionEnum.CALL) {
-				havePlayed.set(players.indexOf(currentPlayer), true);
+				havePlayed.set(playersInHand.indexOf(currentPlayer), true);
+				pot += highestBet - currentPlayer.getBet();
 				currentPlayer.setBet(highestBet);
-				pot += highestBet - currentBet;
 			} else if (action == ActionEnum.CHECK) {
-				if (highestBet != currentBet) {
+				System.out.println(currentBet);
+				if (highestBet != currentPlayer.getBet()) {
 					position--;
 					System.out.println("You do not have the sufficent chips played to check.");
 				} else {
-					havePlayed.set(players.indexOf(currentPlayer), true);
+					havePlayed.set(playersInHand.indexOf(currentPlayer), true);
 				}
 			} else if (action == ActionEnum.BET) {
 				if (highestBet == BIG_BLIND && (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
 					for(int i = 0; i < havePlayed.size(); i++) {
-						if(i != players.indexOf(currentPlayer)) {
+						if(i != playersInHand.indexOf(currentPlayer)) {
 							havePlayed.set(i, false);
 						} else {
 							havePlayed.set(i, true);
@@ -216,7 +222,7 @@ public class Dealer {
 			} else if (action == ActionEnum.RAISE) {
 				if (highestBet != BIG_BLIND && (currentBet - highestBet * 2) >= 0) {
 					for(int i = 0; i < havePlayed.size(); i++) {
-						if(i != players.indexOf(currentPlayer)) {
+						if(i != playersInHand.indexOf(currentPlayer)) {
 							havePlayed.set(i, false);
 						} else {
 							havePlayed.set(i, true);
@@ -248,6 +254,8 @@ public class Dealer {
 			
 			currentPlayer = getNextPlayer(position);
 			
+			for(Boolean b : havePlayed) System.out.print(b + " ");
+			System.out.println();
 		}
 	}
 
@@ -260,6 +268,7 @@ public class Dealer {
 		highestBet = BIG_BLIND;
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
+		resetBets();
 	}
 
 	public Agent findWinner() {
@@ -436,9 +445,10 @@ public class Dealer {
 			
 			for(Agent player : players) {
 				for(Card card : player.getHand()) {
-					Card[] temp = new Card[1];
-					temp[0] = card;
-					List<Integer> value = CardEnum.sortCards(Arrays.asList(temp));
+					List<Card> temp = new ArrayList<Card>();
+					temp.add(card);
+					List<Integer> value = CardEnum.sortCards(temp);
+					System.out.println(value.get(0));
 					if (value.size() == 2) {
 						return player;
 					}
@@ -502,7 +512,7 @@ public class Dealer {
 		if (suits.isEmpty()) {
 			return false;
 		}
-		Card[] filtered = (Card[]) Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0))
+		Object[] filtered = Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0))
 				.collect(Collectors.toList()).toArray();
 		if (filtered.length >= 5) {
 			return true;
