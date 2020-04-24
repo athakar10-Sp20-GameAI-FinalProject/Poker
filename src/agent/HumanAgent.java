@@ -59,7 +59,7 @@ public class HumanAgent implements Agent {
 		return name;
 	}
 
-	public ActionEnum getAction(String action) {
+	private ActionEnum getAction(String action) {
 		action = action.trim();
 		if (action.toLowerCase().equals("call"))
 			return ActionEnum.CALL;

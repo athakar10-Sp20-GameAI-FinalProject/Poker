@@ -73,16 +73,27 @@ public class Dealer {
 	public boolean isPotOver() {
 		return numPlayersInHand <= 1 || round == Round.PREFLOP;
 	}
+	
+	
+	public boolean isWinning(Agent player) {
+		return findWinner() == player;
+	}
 
 	public List<ActionEnum> getValidActions(Agent player) {
-		List<ActionEnum> moves = new ArrayList<>(7);
-
-		// TODO: add logic
-		moves.add(ActionEnum.BET);
+		List<ActionEnum> moves = new ArrayList<>(6);
 		moves.add(ActionEnum.FOLD);
-		moves.add(ActionEnum.RAISE);
-		moves.add(ActionEnum.CHECK);
-		moves.add(ActionEnum.CALL);
+		
+		if(player.getBet() == highestBet) {
+			moves.add(ActionEnum.CHECK);
+		} else {
+			moves.add(ActionEnum.CALL);
+		}
+		
+		if((highestBet != BIG_BLIND && round == Round.PREFLOP) || (highestBet != 0 && round != Round.PREFLOP)) {
+			moves.add(ActionEnum.RAISE);
+		} else {
+			moves.add(ActionEnum.BET);
+		}
 		return moves;
 	}
 	
@@ -202,7 +213,7 @@ public class Dealer {
 					havePlayed.set(playersInHand.indexOf(currentPlayer), true);
 				}
 			} else if (action == ActionEnum.BET) {
-				if (highestBet == BIG_BLIND && (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
+				if (highestBet == BIG_BLIND || (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
 					for(int i = 0; i < havePlayed.size(); i++) {
 						if(i != playersInHand.indexOf(currentPlayer)) {
 							havePlayed.set(i, false);
