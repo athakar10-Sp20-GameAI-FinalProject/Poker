@@ -22,7 +22,7 @@ public enum CardEnum {
     
     public static List<Integer> sortCards(List<Card> cards) {
     	ArrayList<Integer> nums = new ArrayList<>();
-    	for(int i = 0; i < nums.size(); i++) {
+    	for(int i = 0; i < cards.size(); i++) {
     		CardEnum card = cards.get(i).getCard();
     		switch (card) {
     			case ACE: nums.add(1); nums.add(14);

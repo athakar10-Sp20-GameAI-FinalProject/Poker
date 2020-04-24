@@ -7,6 +7,7 @@ import game.Dealer;
 
 public interface Agent {
 	
+	public String getName();
 	public ActionEnum getMove(Dealer dealer);
 	public void setHand(Card c1, Card c2);
 	public void printHand();

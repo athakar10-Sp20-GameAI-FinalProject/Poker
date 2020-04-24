@@ -12,8 +12,8 @@ public class Executor {
 	public static void main(String[] args) {
 		Executor exec = new Executor();
 		List<Agent> players = new ArrayList<Agent>();
-		HumanAgent p1 = new HumanAgent(STARTING_CHIPS);
-		HumanAgent p2 = new HumanAgent(STARTING_CHIPS);
+		HumanAgent p1 = new HumanAgent(STARTING_CHIPS, "P1");
+		HumanAgent p2 = new HumanAgent(STARTING_CHIPS, "P2");
 		// HumanAgent p3 = new HumanAgent(STARTING_CHIPS);
 		// HumanAgent p4 = new HumanAgent(STARTING_CHIPS);
 		players.add(p1);
@@ -29,13 +29,14 @@ public class Executor {
 
 		while (!dealer.isGameOver()) {
 			dealer.deal();
-
+			//players.get(0).setHand(new Card(CardEnum.KING, SuitEnum.HEART), new Card(CardEnum.QUEEN, SuitEnum.HEART));
+			//players.get(1).setHand(new Card(CardEnum.ACE, SuitEnum.CLUB), new Card(CardEnum.ACE, SuitEnum.SPADE));
 			do {
 				dealer.playRound();
 			} while (!dealer.isPotOver());
 
 			Agent winner = dealer.findWinner();
-			System.out.println(winner);
+			//System.out.println(winner.getName());
 			dealer.dollPot(winner);
 			for (Agent player : players) {
 				if (player.getChips() == 0) {

@@ -19,4 +19,7 @@ public class MCTS implements Agent {
 	public void addChips(int pot) {}
 	public void printBetAmount() {}
 	public Card[] getHand() { return null; }
+	public String getName() {
+		return "BOT";
+	}
 }

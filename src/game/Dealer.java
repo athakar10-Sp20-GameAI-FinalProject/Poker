@@ -37,7 +37,7 @@ public class Dealer {
 	public Dealer(List<Agent> players) {
 		deck = new Deck();
 		this.players = players;
-		playersInHand = players;
+		playersInHand = new ArrayList<Agent>(players);
 		numPlayers = playersInHand.size();
 		numPlayersInHand = numPlayers;
 		bigBlind = 0;
@@ -128,6 +128,7 @@ public class Dealer {
 			for (int i = 0; i < COMMUNITY_SIZE - 2; i++) {
 				community[i] = deck.draw();
 			}
+			//community[2] = new Card(CardEnum.JACK, SuitEnum.HEART);
 			printCommunity();
 			startRound = true;
 			parseActions(-1);
@@ -136,6 +137,7 @@ public class Dealer {
 		case TURN:
 			System.out.println("TURN");
 			community[3] = deck.draw();
+			//community[3] = new Card(CardEnum.TEN, SuitEnum.HEART);
 			printCommunity();
 			startRound = true;
 			parseActions(-1);
@@ -144,6 +146,7 @@ public class Dealer {
 		case RIVER:
 			System.out.println("RIVER");
 			community[4] = deck.draw();
+			//community[4] = new Card(CardEnum.ACE, SuitEnum.HEART);
 			printCommunity();
 			startRound = true;
 			parseActions(-1);
@@ -167,7 +170,8 @@ public class Dealer {
 		Agent currentPlayer = getNextPlayer(position);
 		while (!(allBetsEqual() && allPlayed()) || startRound) {
 
-			System.out.println("Current player and their bet: " + playersInHand.indexOf(currentPlayer) + " " + currentPlayer.getBet());
+			
+			System.out.println("\n" + currentPlayer.getName() + "'s bet: " + currentPlayer.getBet());
 			
 			ActionEnum action = currentPlayer.getMove(this);
 
@@ -179,10 +183,7 @@ public class Dealer {
 				System.out.println(ActionEnum.toString(action));
 			}
 
-			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
 
-			for(Boolean b : havePlayed) System.out.print(b + " ");
-			System.out.println();
 			
 			if (action == ActionEnum.FOLD) {
 
@@ -249,25 +250,28 @@ public class Dealer {
 				position--;
 			}
 			startRound = false;
-			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);
+			System.out.println();
+			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);		
 			position++;
 			
 			currentPlayer = getNextPlayer(position);
 			
-			for(Boolean b : havePlayed) System.out.print(b + " ");
-			System.out.println();
 		}
 	}
 
 	public void dollPot(Agent winner) {
 
 		winner.addChips(pot);
+		System.out.println("\n----------------------------------");
+		System.out.println("Pot of " + pot + " goes to " + winner.getName());
+		System.out.println("----------------------------------\n\nNew hand");
 		round = Round.PREFLOP;
 		playersInHand = players;
 		bigBlind = (bigBlind + 1) % numPlayers;
 		highestBet = BIG_BLIND;
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
+		
 		resetBets();
 	}
 
@@ -448,7 +452,6 @@ public class Dealer {
 					List<Card> temp = new ArrayList<Card>();
 					temp.add(card);
 					List<Integer> value = CardEnum.sortCards(temp);
-					System.out.println(value.get(0));
 					if (value.size() == 2) {
 						return player;
 					}
@@ -561,7 +564,7 @@ public class Dealer {
 		List<Integer> sortedCards = CardEnum.sortCards(Arrays.asList(joined));
 		if (isFlush(joined, SuitEnum.allSuits())) {
 			if (isStraight(sortedCards, CardEnum.allCardEnums())) {
-				if (sortedCards.containsAll(CardEnum.allCardEnums().subList(10, 15))) {
+				if (sortedCards.containsAll(CardEnum.allCardEnums().subList(9, 14))) {
 					return 10; // Royal Flush
 				}
 				return 9; // Straight Flush

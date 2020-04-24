@@ -14,11 +14,13 @@ public class HumanAgent implements Agent {
 	private int bet;
 	private boolean allIn = false;
 	private Scanner sc = new Scanner(System.in);
+	private final String name;
 
-	public HumanAgent(int chips) {
+	public HumanAgent(int chips, String name) {
 		this.chips = chips;
 		hand = new Card[Dealer.HAND_SIZE];
 		bet = 0;
+		this.name = name;
 	}
 	
 
@@ -51,6 +53,10 @@ public class HumanAgent implements Agent {
 	
 	public Card[] getHand() {
 		return hand;
+	}
+	
+	public String getName() {
+		return name;
 	}
 
 	public ActionEnum getAction(String action) {
