@@ -76,7 +76,6 @@ public class Dealer {
 	}
 	
 	public Agent findWinner() {
-		
 		handEval.setCommunity(community);
 		return handEval.findWinner();
 	}
@@ -347,6 +346,14 @@ public class Dealer {
 
 	public List<Agent> getPlayers() {
 		return players;
+	}
+	
+	public int getNumPlayersInHand() {
+		return numPlayersInHand;
+	}
+	
+	public List<Agent> getPlayersInHand() {
+		return playersInHand;
 	}
 
 }

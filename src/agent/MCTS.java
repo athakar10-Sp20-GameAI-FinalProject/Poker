@@ -1,13 +1,16 @@
 package agent;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Stream;
+import java.util.stream.Collectors.*;
 
 import game.ActionEnum;
 import game.Card;
 import game.Dealer;
+import game.Deck;
+import game.HandEval;
 
 public class MCTS implements Agent {
 
@@ -28,9 +31,47 @@ public class MCTS implements Agent {
 		bet = 0;
 	}
 	
-	private List<Card[]> possibleHands() {
-		List<Card> currentHand = Arrays.asList(hand);
-		List<Card[]> possibleHands = new ArrayList<Card[]>();
+	public void setDealer(Dealer d) {
+		game = d;
+	}
+	
+	public List<List<Card>> possibleHands(Card[] community, Card[] hand) {
+		List<Card> currentHand = new ArrayList<>();
+		for(int i = 0; i < community.length; i++) {
+			if(community[i] != null) currentHand.add(community[i]);
+		}
+		for(int i = 0; i < hand.length; i++) {
+			currentHand.add(hand[i]);
+		}
+		
+		Deck freshDeck = new Deck();
+		List<Card> cardsLeft = freshDeck.getDeck();
+		for(Card c : currentHand) {
+			cardsLeft.remove(c);
+		}
+		
+		HandEval eval = new HandEval(game.getNumPlayersInHand(), game.getPlayersInHand());
+		
+		return findHandsRecur(cardsLeft, currentHand, new ArrayList<List<Card>>(), eval);
+	}
+	
+	private List<List<Card>> findHandsRecur(List<Card> cardsLeft, List<Card> currentHand, List<List<Card>> possibleHands, HandEval eval) {
+		//System.out.println("recur called: " + currentHand.toString());
+		if(currentHand.size() == 7) {
+			if(eval.computeRank(currentHand.toArray(new Card[7])) > 1) {
+				possibleHands.add(currentHand);
+			}
+		}
+		else if(cardsLeft.isEmpty()) {
+			return possibleHands;
+		} else {
+			List<Card> tail = cardsLeft.subList(1, cardsLeft.size());
+			List<Card> newHand = new ArrayList<>(currentHand);
+			newHand.add(cardsLeft.get(0));
+			List<List<Card>> ret = findHandsRecur(tail, currentHand, possibleHands, eval);
+			ret.addAll(findHandsRecur(tail, newHand, possibleHands, eval));
+			return ret;
+		}
 		return possibleHands;
 	}
 	

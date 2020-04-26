@@ -311,7 +311,7 @@ public class HandEval {
 		return hasTwoPairs(joined.subList(1, joined.size()), joined.get(0), required - 1);
 	}
 
-	private int computeRank(Card[] joined) {
+	public int computeRank(Card[] joined) {
 		List<Integer> sortedCards = CardEnum.sortCards(Arrays.asList(joined));
 		if (isFlush(joined, SuitEnum.allSuits())) {
 			if (isStraight(sortedCards, CardEnum.allCardEnums())) {

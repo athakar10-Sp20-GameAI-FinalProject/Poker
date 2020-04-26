@@ -5,6 +5,7 @@ import java.util.List;
 
 import agent.Agent;
 import agent.HumanAgent;
+import agent.MCTS;
 
 public class Executor {
 	public static final int STARTING_CHIPS = 1000;
@@ -27,6 +28,22 @@ public class Executor {
 	public void runGame(List<Agent> players) {
 		Dealer dealer = new Dealer(players);
 
+//		MCTS bot = new MCTS(STARTING_CHIPS);
+//		bot.setDealer(dealer);
+//		Card[] botHand = new Card[2];
+//		botHand[0] = new Card(CardEnum.KING, SuitEnum.HEART);
+//		botHand[1] = new Card(CardEnum.ACE, SuitEnum.CLUB);
+//		Card[] community = new Card[5];
+//		community[0] = new Card(CardEnum.SIX, SuitEnum.HEART);
+//		community[1] = new Card(CardEnum.FIVE, SuitEnum.HEART);
+//		community[2] = new Card(CardEnum.FOUR, SuitEnum.HEART);
+//		community[3] = new Card(CardEnum.THREE, SuitEnum.HEART);
+//		community[4] = new Card(CardEnum.TWO, SuitEnum.HEART);
+//		for(List<Card> cards : bot.possibleHands(community, botHand)) {
+//			System.out.println("not empty");
+//			System.out.println(cards.toString());
+//		}
+		
 		while (!dealer.isGameOver()) {
 			dealer.deal();
 			//players.get(0).setHand(new Card(CardEnum.KING, SuitEnum.HEART), new Card(CardEnum.QUEEN, SuitEnum.HEART));
