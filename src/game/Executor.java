@@ -22,7 +22,6 @@ public class Executor {
 		players.add(p2);
 		// players.add(p3);
 		// players.add(p4);
-		// Agent[] ps = players.toArray(new Agent[players.size()]);
 		exec.runGame(players);
 	}
 
@@ -50,15 +49,9 @@ public class Executor {
 			bot.root.setProbabilities(community, botHand);
 		}
 		
-//		for(List<Card> cards : bot.possibleHands(community, botHand)) {
-//			System.out.println("not empty");
-//			System.out.println(cards.toString());
-//		}
 		
 		while (!dealer.isGameOver()) {
 			dealer.deal();
-			//players.get(0).setHand(new Card(CardEnum.KING, SuitEnum.HEART), new Card(CardEnum.QUEEN, SuitEnum.HEART));
-			//players.get(1).setHand(new Card(CardEnum.ACE, SuitEnum.CLUB), new Card(CardEnum.ACE, SuitEnum.SPADE));
 			do {
 				dealer.playRound();
 			} while (!dealer.isPotOver());

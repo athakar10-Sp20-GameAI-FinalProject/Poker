@@ -37,46 +37,6 @@ public class MCTS implements Agent {
 		root = new Node(d);
 	}
 	
-		
-//		List<Card> currentHand = new ArrayList<>();
-//		for(int i = 0; i < community.length; i++) {
-//			if(community[i] != null) currentHand.add(community[i]);
-//		}
-//		for(int i = 0; i < hand.length; i++) {
-//			currentHand.add(hand[i]);
-//		}
-//		
-//		Deck freshDeck = new Deck();
-//		List<Card> cardsLeft = freshDeck.getDeck();
-//		for(Card c : currentHand) {
-//			cardsLeft.remove(c);
-//		}
-//		
-//		HandEval eval = new HandEval(game.getNumPlayersInHand(), game.getPlayersInHand());
-//		
-//		return findHandsRecur(cardsLeft, currentHand, new ArrayList<List<Card>>(), eval);
-//	}
-	
-//	private List<List<Card>> findHandsRecur(List<Card> cardsLeft, List<Card> currentHand, List<List<Card>> possibleHands, HandEval eval) {
-//		//System.out.println("recur called: " + currentHand.toString());
-//		if(currentHand.size() == 7) {
-//			if(eval.computeRank(currentHand.toArray(new Card[7])) > 1) {
-//				possibleHands.add(currentHand);
-//			}
-//		}
-//		else if(cardsLeft.isEmpty()) {
-//			return possibleHands;
-//		} else {
-//			List<Card> tail = cardsLeft.subList(1, cardsLeft.size());
-//			List<Card> newHand = new ArrayList<>(currentHand);
-//			newHand.add(cardsLeft.get(0));
-//			List<List<Card>> ret = findHandsRecur(tail, currentHand, possibleHands, eval);
-//			ret.addAll(findHandsRecur(tail, newHand, possibleHands, eval));
-//			return ret;
-//		}
-//		return possibleHands;
-//	}
-	
 	// MCTS Code
 	
 	public ActionEnum getMove(Dealer dealer) 
@@ -186,6 +146,7 @@ public class MCTS implements Agent {
 		return null;
 	}
 	
+	// TODO: fix rollout
 	private int rollout(Node leaf)
 	{
 		// simulating playouts to the end of the game with random moves
@@ -237,6 +198,7 @@ public class MCTS implements Agent {
 		}
 	}
 	
+	// TODO: fix types and such
 	private void addChildren(Node node)
 	{
 		List<ActionEnum> validMoves = game.getValidActions(this);

@@ -1,4 +1,0 @@
-pair 4 2
-twopair 7 4
-insidestraight
-straight
