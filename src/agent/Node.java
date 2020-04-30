@@ -1,10 +1,13 @@
 package agent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import game.ActionEnum;
+import game.Card;
 import game.Dealer;
+import game.Deck;
 
 public class Node {
 	
@@ -19,8 +22,10 @@ public class Node {
 	public boolean isTerminal;
 	public int winner;
 	public ActionEnum moveToGetHere;
+	// Maps rank (1-10) to probabilities of that hand
+	public HashMap<Integer, Double> probabilities = new HashMap<>();
 	
-	protected Node()
+	protected Node(Dealer dealer)
 	{
 		this.isExpanded = false;
 		this.isVisited = false;
@@ -29,7 +34,46 @@ public class Node {
 		this.simulations = 0;
 		this.wins = 0;
 		this.children = new ArrayList<Node>();
+		this.gameState = dealer;
 	}
+	
+	public void setProbabilities(Card[] community, Card[] hand)
+	{
+		int numSims = 5000;
+		int curr = 0;
+		int[] ranks = new int[10];
+		while(curr < numSims) {
+			Deck copyDeck = gameState.getDeck().makeCopy();
+			copyDeck.shuffle();
+			Card[] joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
+			for(int i = 0; i < Dealer.HAND_SIZE; i++) {
+				joined[i] = hand[i];
+			}
+			for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
+				joined[i + Dealer.HAND_SIZE] = community[i];
+			}
+			for(int i = 0; i < joined.length; i++) {
+				if(joined[i] == null) {
+					joined[i] = copyDeck.draw();
+				}
+			}
+			int rank = gameState.getEval().computeRank(joined);
+			ranks[rank-1]++;
+			
+			curr++;
+		}
+		for(int i = 0; i < ranks.length; i++) {
+			probabilities.put(i, (double)ranks[i] / (double)numSims);
+		}
+		printProbabilities();
+	}
+	
+	public void printProbabilities() {
+		for(Integer key : probabilities.keySet()) {
+			System.out.println("Rank : " + (key+1) + ", Probability = " + probabilities.get(key));
+		}
+	}
+	
 	
 	/*
 	 * return the child with the highest UCT value

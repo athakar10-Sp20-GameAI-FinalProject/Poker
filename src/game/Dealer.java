@@ -11,7 +11,7 @@ import agent.Agent;
 
 public class Dealer {
 
-	private enum Round {
+	public enum Round {
 		PREFLOP, FLOP, TURN, RIVER;
 	}
 
@@ -52,6 +52,7 @@ public class Dealer {
 		for(Agent p : players) {
 			havePlayed.add(false);
 		}
+		handEval = new HandEval(numPlayersInHand, playersInHand);
 	}
 
 	public Dealer makeCopy() {
@@ -354,6 +355,18 @@ public class Dealer {
 	
 	public List<Agent> getPlayersInHand() {
 		return playersInHand;
+	}
+	
+	public Deck getDeck() {
+		return deck;
+	}
+	
+	public Round getRound() {
+		return round;
+	}
+	
+	public HandEval getEval() {
+		return handEval;
 	}
 
 }

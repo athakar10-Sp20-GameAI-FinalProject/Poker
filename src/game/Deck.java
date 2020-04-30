@@ -20,6 +20,12 @@ public class Deck {
         if (deck.size() != newSize)
             throw new IndexOutOfBoundsException("Deck does not contain 52 cards.");
     }
+    
+    public Deck makeCopy() {
+    	Deck copy = new Deck();
+    	copy.deck = new ArrayList<>(deck);
+    	return copy;
+    }
 
     public int size() { return this.deck.size(); }
 

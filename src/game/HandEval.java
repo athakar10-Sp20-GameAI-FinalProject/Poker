@@ -285,7 +285,9 @@ public class HandEval {
 	}
 
 	private boolean isMatchingCard(List<Integer> joined, int match, int required, int count) {
-		if (count == 0) {
+//		System.out.println(joined.toString());
+//		System.out.println("match = " + match + " required = " + required + " count = " + count);
+		if (count == 1) {
 			return true;
 		}
 		if (joined.isEmpty()) {
@@ -335,9 +337,9 @@ public class HandEval {
 				return 4; // Triple
 			}
 
-			if (hasTwoPairs(sortedCards, -1, 2)) { // Two Pair
-				return 3; // Two Pair
-			}
+			//if (hasTwoPairs(sortedCards, -1, 2)) { // Two Pair
+			//	return 3; // Two Pair
+			//}
 			return 2; // Pair
 
 		}

@@ -1,6 +1,7 @@
 package game;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import agent.Agent;
@@ -28,17 +29,27 @@ public class Executor {
 	public void runGame(List<Agent> players) {
 		Dealer dealer = new Dealer(players);
 
-//		MCTS bot = new MCTS(STARTING_CHIPS);
-//		bot.setDealer(dealer);
-//		Card[] botHand = new Card[2];
-//		botHand[0] = new Card(CardEnum.KING, SuitEnum.HEART);
-//		botHand[1] = new Card(CardEnum.ACE, SuitEnum.CLUB);
-//		Card[] community = new Card[5];
-//		community[0] = new Card(CardEnum.SIX, SuitEnum.HEART);
-//		community[1] = new Card(CardEnum.FIVE, SuitEnum.HEART);
-//		community[2] = new Card(CardEnum.FOUR, SuitEnum.HEART);
+		MCTS bot = new MCTS(STARTING_CHIPS);
+		bot.setDealer(dealer);
+		Card[] botHand = new Card[2];
+		botHand[0] = new Card(CardEnum.KING, SuitEnum.HEART);
+		botHand[1] = new Card(CardEnum.ACE, SuitEnum.CLUB);
+		
+//		for(int i = 0; i < 10; i++) {
+//			System.out.println();
+//			bot.root.setProbabilities(new Card[5], botHand);
+//		}
+		Card[] community = new Card[5];
+		community[0] = new Card(CardEnum.SIX, SuitEnum.CLUB);
+		community[1] = new Card(CardEnum.FIVE, SuitEnum.CLUB);
+		community[2] = new Card(CardEnum.KING, SuitEnum.DIAMOND);
 //		community[3] = new Card(CardEnum.THREE, SuitEnum.HEART);
 //		community[4] = new Card(CardEnum.TWO, SuitEnum.HEART);
+		for(int i = 0; i < 10; i++) {
+			System.out.println();
+			bot.root.setProbabilities(community, botHand);
+		}
+		
 //		for(List<Card> cards : bot.possibleHands(community, botHand)) {
 //			System.out.println("not empty");
 //			System.out.println(cards.toString());

@@ -23,6 +23,7 @@ public class MCTS implements Agent {
 	private Scanner sc = new Scanner(System.in);
 	private final String name = "BOT";
 	private Dealer game;
+	public Node root;
 	
 	
 	public MCTS(int chips) {
@@ -33,47 +34,48 @@ public class MCTS implements Agent {
 	
 	public void setDealer(Dealer d) {
 		game = d;
+		root = new Node(d);
 	}
 	
-	public List<List<Card>> possibleHands(Card[] community, Card[] hand) {
-		List<Card> currentHand = new ArrayList<>();
-		for(int i = 0; i < community.length; i++) {
-			if(community[i] != null) currentHand.add(community[i]);
-		}
-		for(int i = 0; i < hand.length; i++) {
-			currentHand.add(hand[i]);
-		}
 		
-		Deck freshDeck = new Deck();
-		List<Card> cardsLeft = freshDeck.getDeck();
-		for(Card c : currentHand) {
-			cardsLeft.remove(c);
-		}
-		
-		HandEval eval = new HandEval(game.getNumPlayersInHand(), game.getPlayersInHand());
-		
-		return findHandsRecur(cardsLeft, currentHand, new ArrayList<List<Card>>(), eval);
-	}
+//		List<Card> currentHand = new ArrayList<>();
+//		for(int i = 0; i < community.length; i++) {
+//			if(community[i] != null) currentHand.add(community[i]);
+//		}
+//		for(int i = 0; i < hand.length; i++) {
+//			currentHand.add(hand[i]);
+//		}
+//		
+//		Deck freshDeck = new Deck();
+//		List<Card> cardsLeft = freshDeck.getDeck();
+//		for(Card c : currentHand) {
+//			cardsLeft.remove(c);
+//		}
+//		
+//		HandEval eval = new HandEval(game.getNumPlayersInHand(), game.getPlayersInHand());
+//		
+//		return findHandsRecur(cardsLeft, currentHand, new ArrayList<List<Card>>(), eval);
+//	}
 	
-	private List<List<Card>> findHandsRecur(List<Card> cardsLeft, List<Card> currentHand, List<List<Card>> possibleHands, HandEval eval) {
-		//System.out.println("recur called: " + currentHand.toString());
-		if(currentHand.size() == 7) {
-			if(eval.computeRank(currentHand.toArray(new Card[7])) > 1) {
-				possibleHands.add(currentHand);
-			}
-		}
-		else if(cardsLeft.isEmpty()) {
-			return possibleHands;
-		} else {
-			List<Card> tail = cardsLeft.subList(1, cardsLeft.size());
-			List<Card> newHand = new ArrayList<>(currentHand);
-			newHand.add(cardsLeft.get(0));
-			List<List<Card>> ret = findHandsRecur(tail, currentHand, possibleHands, eval);
-			ret.addAll(findHandsRecur(tail, newHand, possibleHands, eval));
-			return ret;
-		}
-		return possibleHands;
-	}
+//	private List<List<Card>> findHandsRecur(List<Card> cardsLeft, List<Card> currentHand, List<List<Card>> possibleHands, HandEval eval) {
+//		//System.out.println("recur called: " + currentHand.toString());
+//		if(currentHand.size() == 7) {
+//			if(eval.computeRank(currentHand.toArray(new Card[7])) > 1) {
+//				possibleHands.add(currentHand);
+//			}
+//		}
+//		else if(cardsLeft.isEmpty()) {
+//			return possibleHands;
+//		} else {
+//			List<Card> tail = cardsLeft.subList(1, cardsLeft.size());
+//			List<Card> newHand = new ArrayList<>(currentHand);
+//			newHand.add(cardsLeft.get(0));
+//			List<List<Card>> ret = findHandsRecur(tail, currentHand, possibleHands, eval);
+//			ret.addAll(findHandsRecur(tail, newHand, possibleHands, eval));
+//			return ret;
+//		}
+//		return possibleHands;
+//	}
 	
 	// MCTS Code
 	
@@ -81,7 +83,7 @@ public class MCTS implements Agent {
 	{
 		// initialize class variables and create root node (passed in game state)
 		this.game = dealer;
-		Node root = new Node();
+		Node root = new Node(dealer);
 		root.gameState = game.makeCopy();
 		//root.turn = game.getTurn();
 		
@@ -241,7 +243,7 @@ public class MCTS implements Agent {
 		// create children for each valid move
 		for (ActionEnum p : validMoves)
 		{
-			Node newChild = new Node();
+			Node newChild = new Node(game);
 			newChild.moveToGetHere = p;
 			// negate the turn from the parent
 			newChild.turn = node.turn * -1;
