@@ -37,6 +37,7 @@ public class Node {
 		this.gameState = dealer;
 	}
 	
+	
 	public void setProbabilities(Card[] community, Card[] hand)
 	{
 		int numSims = 5000;

@@ -19,4 +19,5 @@ public interface Agent {
 	public void printBetAmount();
 	public void addChips(int pot);
 	public Card[] getHand();
+	public Agent makeCopy();
 }

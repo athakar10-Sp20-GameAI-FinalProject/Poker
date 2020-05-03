@@ -300,8 +300,6 @@ public class HandEval {
 	}
 
 	private boolean hasTwoPairs(List<Integer> joined, int match, int required) {
-		System.out.println(joined.toString());
-		System.out.println("match = " + match + " required = " + required);
 		if (required == 0) {
 			return true;
 		}
@@ -314,16 +312,45 @@ public class HandEval {
 
 		return hasTwoPairs(joined.subList(1, joined.size()), joined.get(0), required);
 	}
+	
+	private List<Card> findSuited(Card[] joined) {
+		HashMap<String, List<Card>> suits = new HashMap<String, List<Card>>() {{
+			put("H", new ArrayList<Card>());
+			put("C", new ArrayList<Card>());
+			put("D", new ArrayList<Card>());
+			put("S", new ArrayList<Card>());
+		}};
+		for(Card c : joined) {
+			for(String suit : suits.keySet()) {
+				if(c.getSuit().getSuit().equals(suit)) {
+					List<Card> newSuits = suits.get(suit);
+					newSuits.add(c);
+					suits.put(suit, newSuits);
+				}
+			}
+		}
+		List<Card> max = new ArrayList<>();
+		for(String suit : suits.keySet()) {
+			List<Card> cards = suits.get(suit);
+			if(cards.size() > max.size()) {
+				max = new ArrayList<>(cards);
+			}
+		}
+		return max;
+	}
 
 	public int computeRank(Card[] joined) {
 		List<Integer> sortedCards = CardEnum.sortCards(Arrays.asList(joined));
-		
+
 		if (isFlush(joined, SuitEnum.allSuits())) {
 			if (isStraight(sortedCards, CardEnum.allCardEnums())) {
-				if (sortedCards.containsAll(CardEnum.allCardEnums().subList(9, 14))) {
-					return 10; // Royal Flush
+				List<Card> checkRoyalFlush = Arrays.asList(joined).stream().filter(x -> x.getCard().getValue() >= 10).collect(Collectors.toList());
+				if(isFlush(checkRoyalFlush.toArray(new Card[checkRoyalFlush.size()]), SuitEnum.allSuits())) {
+					return 10;
 				}
-				return 9; // Straight Flush
+				if(isStraight(CardEnum.sortCards(findSuited(joined)), CardEnum.allCardEnums())) {
+					return 9; // Straight Flush
+				}
 			}
 			return 6; // Flush
 		}
@@ -335,7 +362,6 @@ public class HandEval {
 		if (isMatchingCard(sortedCards, -1, 2, 2)) {
 			
 			List<Integer> removedDupAce = sortedCards.stream().filter(x -> x != 1).collect(Collectors.toList());
-			System.out.println(removedDupAce.toString());
 
 			
 			if (isMatchingCard(removedDupAce, -1, 4, 4)) {

@@ -1,16 +1,11 @@
 package agent;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Stream;
-import java.util.stream.Collectors.*;
+import java.util.Random;
 
 import game.ActionEnum;
 import game.Card;
 import game.Dealer;
-import game.Deck;
-import game.HandEval;
 
 public class MCTS implements Agent {
 
@@ -20,16 +15,26 @@ public class MCTS implements Agent {
 	private Card[] hand;
 	private int bet;
 	private boolean allIn = false;
-	private Scanner sc = new Scanner(System.in);
 	private final String name = "BOT";
 	private Dealer game;
-	public Node root;
+	private Random rand = new Random();
+	private Node root;
 	
 	
 	public MCTS(int chips) {
 		this.chips = chips;
 		hand = new Card[Dealer.HAND_SIZE];
 		bet = 0;
+	}
+	
+	public Agent makeCopy() {
+		MCTS copy = new MCTS(chips);
+		copy.hand = hand.clone();
+		copy.bet = new Integer(bet);
+		copy.allIn = new Boolean(allIn);
+		copy.game = game.makeCopy();
+		copy.root = root;
+		return copy;
 	}
 	
 	public void setDealer(Dealer d) {
@@ -51,7 +56,14 @@ public class MCTS implements Agent {
 		performMCTS(root, timeLimit);
 		
 		// choose the child with the best win percentage
-		return bestChildWinPct(root);
+		ActionEnum move = bestChildWinPct(root);
+		System.out.println(name + " makes move: " + move.name());
+		System.out.println("Has hand: ");
+		for(Card c : hand) {
+			System.out.println(c.getName() + " ");
+		}
+		root.printProbabilities();
+		return move;
 	}
 	
 	private void performMCTS(Node root, long timeLimit)
@@ -146,7 +158,6 @@ public class MCTS implements Agent {
 		return null;
 	}
 	
-	// TODO: fix rollout
 	private int rollout(Node leaf)
 	{
 		// simulating playouts to the end of the game with random moves
@@ -159,28 +170,28 @@ public class MCTS implements Agent {
 		Dealer rolloutBoard = game.makeCopy();
 		// get possible next moves
 		List<ActionEnum> validMoves = game.getValidActions(this);
+		List<Agent> currentPlayers = game.getPlayersInHand();
+		int position = currentPlayers.indexOf(this) + 1;
 		
 		// continue getting the next board until we reach a terminal state
-//		while (game.isWinningBoard(rolloutBoard) == 0 && !game.isPotOver())
-//		{
-//			int randInt = rand.nextInt(validMoves.size());
+		while (rolloutBoard.isWinning(this) && !game.isPotOver())
+		{
+			int randInt = rand.nextInt(validMoves.size());
 //			// simulate move with random validMove choice
-//			rolloutBoard = game.simulateMove(rolloutBoard, validMoves.get(randInt));
-//			// switch player turns
-//			turn *= -1;
+			rolloutBoard = rolloutBoard.simulateMove(currentPlayers.get(position), validMoves.get(randInt));
 //			// set validMoves for next loop iteration
-//			validMoves = game.getValidMoves(rolloutBoard, turn);
-//		}
+			validMoves = rolloutBoard.getValidActions(this);
+			position = (position + 1) % game.getNumPlayersInHand();
+		}
 
 		// return the game result
-		return 0;//game.isWinningBoard(rolloutBoard);
+		return 0; //game.isWinningBoard(rolloutBoard);
 	}
 	
 	private void backpropagate(Node node, int result)
 	{
 		// need to negate this for back propagation
 		// turn is for the NEXT move, not who's move it was INTO this game state
-		result *= -1;
 		Node tmp = node;
 		// update all parent nodes
 		while (tmp != null)
@@ -188,7 +199,7 @@ public class MCTS implements Agent {
 			// regardless of winner, add simulation
 			tmp.simulations++;
 			// if turn for this node wins, add a win
-			if (result == tmp.turn)
+			if (tmp.gameState.isWinning(this))
 				tmp.wins++;
 			// if no one wins, add half a win
 			// this differentiates between draws and losses
@@ -198,7 +209,6 @@ public class MCTS implements Agent {
 		}
 	}
 	
-	// TODO: fix types and such
 	private void addChildren(Node node)
 	{
 		List<ActionEnum> validMoves = game.getValidActions(this);
@@ -207,11 +217,10 @@ public class MCTS implements Agent {
 		{
 			Node newChild = new Node(game);
 			newChild.moveToGetHere = p;
-			// negate the turn from the parent
-			newChild.turn = node.turn * -1;
 			newChild.parent = node;
 			// get child's board state by simulating the valid move from current board state
-			//newChild.gameState = game.simulateMove(node.gameState, newChild.moveToGetHere);
+			
+			newChild.gameState = game.makeCopy().simulateMove(this, p);
 			
 			// check if terminal node
 			if (game.isPotOver())
@@ -268,14 +277,7 @@ public class MCTS implements Agent {
 		node.isExpanded = true;
 		return;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
+
 	// Normal implementations
 	
 	public void addChips(int pot) {
@@ -335,14 +337,7 @@ public class MCTS implements Agent {
 	}
 	
 	public int getBetAmount(ActionEnum action) {
-		int parseBet;
-		if (ActionEnum.needsAmount(action)) {
-			System.out.print("Amount? ");
-			parseBet = sc.nextInt();
-		} else {
-			parseBet = 0;
-		}
-		return parseBet;
+		return 100;
 	}
 	
 	public String getName() {

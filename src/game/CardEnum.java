@@ -3,6 +3,7 @@ package game;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 public enum CardEnum {
@@ -11,13 +12,34 @@ public enum CardEnum {
     NINE("9"), TEN("10"), JACK("J"), QUEEN("Q"), KING("K");
 
     private String name;
+    private int value;
+    private HashMap<String, Integer> values = new HashMap<String, Integer>() {{
+    	put("A", 14);
+    	put("2", 2);
+    	put("3", 3);
+    	put("4", 4);
+    	put("5", 5);
+    	put("6", 6);
+    	put("7", 7);
+    	put("8", 8);
+    	put("9", 9);
+    	put("10", 10);
+    	put("J", 11);
+    	put("Q", 12);
+    	put("K", 13);
+    }};
 
     CardEnum (String name) {
         this.name = name;
+        this.value = values.get(name);
     }
 
     String getType() {
         return this.name;
+    }
+    
+    int getValue() {
+    	return this.value;
     }
     
     public static List<Integer> sortCards(List<Card> cards) {

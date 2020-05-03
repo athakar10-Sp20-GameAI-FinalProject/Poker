@@ -19,46 +19,36 @@ public class Executor {
 		// HumanAgent p3 = new HumanAgent(STARTING_CHIPS);
 		// HumanAgent p4 = new HumanAgent(STARTING_CHIPS);
 		players.add(p1);
-		players.add(p2);
+		players.add(p2);	
 		// players.add(p3);
 		// players.add(p4);
 		exec.runGame(players);
 	}
 
 	public void runGame(List<Agent> players) {
-		Dealer dealer = new Dealer(players);
-
 		MCTS bot = new MCTS(STARTING_CHIPS);
+		players.add(bot);
+		Dealer dealer = new Dealer(players);
 		bot.setDealer(dealer);
-		Card[] botHand = new Card[2];
-		botHand[0] = new Card(CardEnum.KING, SuitEnum.CLUB);
-		botHand[1] = new Card(CardEnum.ACE, SuitEnum.CLUB);
+
+//		Card[] botHand = new Card[2];
+//		botHand[0] = new Card(CardEnum.KING, SuitEnum.CLUB);
+//		botHand[1] = new Card(CardEnum.NINE, SuitEnum.CLUB);
 		
 //		for(int i = 0; i < 10; i++) {
 //			System.out.println();
 //			bot.root.setProbabilities(new Card[5], botHand);
 //		}
-		Card[] community = new Card[5];
-		community[0] = new Card(CardEnum.SIX, SuitEnum.CLUB);
-		community[1] = new Card(CardEnum.FIVE, SuitEnum.CLUB);
-		community[2] = new Card(CardEnum.ACE, SuitEnum.DIAMOND);
-		community[3] = new Card(CardEnum.ACE, SuitEnum.HEART);
-		community[4] = new Card(CardEnum.ACE, SuitEnum.SPADE);
+//		Card[] community = new Card[5];
+//		community[0] = new Card(CardEnum.QUEEN, SuitEnum.CLUB);
+//		community[1] = new Card(CardEnum.JACK, SuitEnum.CLUB);
+//		community[2] = new Card(CardEnum.TEN, SuitEnum.CLUB);
+//		community[3] = new Card(CardEnum.FIVE, SuitEnum.CLUB);
+//		community[4] = new Card(CardEnum.FOUR, SuitEnum.CLUB);
 //		for(int i = 0; i < 10; i++) {
 //			System.out.println();
 //			bot.root.setProbabilities(community, botHand);
 //		}
-		
-		Card[] joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
-		for(int i = 0; i < Dealer.HAND_SIZE; i++) {
-			joined[i] = botHand[i];
-		}
-		for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
-			joined[i + Dealer.HAND_SIZE] = community[i];
-		}
-		
-		HandEval eval = new HandEval(1,Arrays.asList(bot));
-		System.out.println(eval.computeRank(joined));
 		
 		while (!dealer.isGameOver()) {
 			dealer.deal();

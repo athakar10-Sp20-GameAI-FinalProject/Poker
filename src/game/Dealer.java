@@ -57,14 +57,14 @@ public class Dealer {
 
 	public Dealer makeCopy() {
 		Dealer ret = new Dealer(players);
-		ret.deck = deck;
-		ret.playersInHand = playersInHand;
-		ret.numPlayers = numPlayers;
-		ret.bigBlind = bigBlind;
-		ret.highestBet = highestBet;
+		ret.deck = deck.makeCopy();
+		ret.playersInHand = new ArrayList<>(playersInHand);
+		ret.numPlayers = new Integer(numPlayers);
+		ret.bigBlind = new Integer(bigBlind);
+		ret.highestBet = new Integer(highestBet);
 		ret.highestBetter = highestBetter;
 		ret.round = round;
-		ret.pot = pot;
+		ret.pot = new Integer(pot);
 		ret.community = community;
 		ret.numPlayersInHand = numPlayersInHand;
 		ret.startRound = startRound;
@@ -129,6 +129,7 @@ public class Dealer {
 		resetHavePlayed();
 		highestBet = 0;
 		highestBetter = getButton();
+		startRound = true;
 		switch (round) {
 		case PREFLOP:
 			System.out.println("PRE FLOP");
@@ -136,7 +137,6 @@ public class Dealer {
 			getSmallBlind().setBlind(SMALL_BLIND);
 			highestBetter = getBigBlind();
 			highestBet = BIG_BLIND;
-			startRound = true;
 			parseActions(1);
 			round = Round.FLOP;
 			break;
@@ -145,27 +145,21 @@ public class Dealer {
 			for (int i = 0; i < COMMUNITY_SIZE - 2; i++) {
 				community[i] = deck.draw();
 			}
-			//community[2] = new Card(CardEnum.JACK, SuitEnum.HEART);
 			printCommunity();
-			startRound = true;
 			parseActions(-1);
 			round = Round.TURN;
 			break;
 		case TURN:
 			System.out.println("TURN");
 			community[3] = deck.draw();
-			//community[3] = new Card(CardEnum.TEN, SuitEnum.HEART);
 			printCommunity();
-			startRound = true;
 			parseActions(-1);
 			round = Round.RIVER;
 			break;
 		case RIVER:
 			System.out.println("RIVER");
 			community[4] = deck.draw();
-			//community[4] = new Card(CardEnum.ACE, SuitEnum.HEART);
 			printCommunity();
-			startRound = true;
 			parseActions(-1);
 			round = Round.PREFLOP;
 			break;
@@ -201,70 +195,55 @@ public class Dealer {
 			}
 
 
-			
-			if (action == ActionEnum.FOLD) {
-
-				removePlayerFromPot(currentPlayer);
-				position--;
-			} else if (action == ActionEnum.CALL) {
-				havePlayed.set(playersInHand.indexOf(currentPlayer), true);
-				pot += highestBet - currentPlayer.getBet();
-				currentPlayer.setBet(highestBet);
-			} else if (action == ActionEnum.CHECK) {
-				System.out.println(currentBet);
-				if (highestBet != currentPlayer.getBet()) {
+			switch (action) {
+				case FOLD: 
+					makeMove(currentPlayer, action, 0);
 					position--;
-					System.out.println("You do not have the sufficent chips played to check.");
-				} else {
-					havePlayed.set(playersInHand.indexOf(currentPlayer), true);
-				}
-			} else if (action == ActionEnum.BET) {
-				if (highestBet == BIG_BLIND || (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
-					for(int i = 0; i < havePlayed.size(); i++) {
-						if(i != playersInHand.indexOf(currentPlayer)) {
-							havePlayed.set(i, false);
-						} else {
-							havePlayed.set(i, true);
+				break;
+				
+				case CALL:
+					makeMove(currentPlayer, action, 0);
+				break;
+				
+				case CHECK:
+					System.out.println(currentBet);
+					if (highestBet != currentPlayer.getBet()) {
+						position--;
+						System.out.println("You do not have the sufficent chips played to check.");
+					} else {
+						makeMove(currentPlayer, action, 0);
+					}
+				break;
+				
+				case BET: 
+					if (highestBet == BIG_BLIND || (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
+						makeMove(currentPlayer, action, currentBet);
+					} else {
+						position--;
+						System.out.println(
+								"You can only bet when it is the first time increasing amount. You can try raising.");
+					}
+				break;
+				
+				case RAISE:
+					if (highestBet != BIG_BLIND && (currentBet - highestBet * 2) >= 0) {
+						makeMove(currentPlayer, action, currentBet);
+					} else {
+	
+						position--;
+						if ((currentBet - highestBet * 2) < 0) {
+	
+							System.out.println(
+									"You need to increase the size of the raise to at least the current highest bet times 2");
+						} else if (highestBet == BIG_BLIND) {
+							System.out.println(
+									"You can only raise when there has already been a bet placed. Try again but place a bet.");
 						}
 					}
-					currentPlayer.setBet(currentBet);
-					highestBet = currentBet;
-					pot += highestBet;
-					highestBetter = currentPlayer;
-				} else {
-
+				break;
+				
+				default:
 					position--;
-					System.out.println(
-							"You can only bet when it is the first time increasing amount. You can try raising.");
-				}
-			} else if (action == ActionEnum.RAISE) {
-				if (highestBet != BIG_BLIND && (currentBet - highestBet * 2) >= 0) {
-					for(int i = 0; i < havePlayed.size(); i++) {
-						if(i != playersInHand.indexOf(currentPlayer)) {
-							havePlayed.set(i, false);
-						} else {
-							havePlayed.set(i, true);
-						}
-					}
-					currentPlayer.setBet(currentBet);
-					highestBet = currentBet;
-					pot += highestBet;
-					highestBetter = currentPlayer;
-				} else {
-
-					position--;
-					if ((currentBet - highestBet * 2) < 0) {
-
-						System.out.println(
-								"You need to increase the size of the raise to at least the current highest bet times 2");
-					} else if (highestBet == BIG_BLIND) {
-
-						System.out.println(
-								"You can only raise when there has already been a bet placed. Try again but place a bet.");
-					}
-				}
-			} else {
-				position--;
 			}
 			startRound = false;
 			System.out.println();
@@ -274,6 +253,74 @@ public class Dealer {
 			currentPlayer = getNextPlayer(position);
 			
 		}
+	}
+	
+	public void makeMove(Agent currentPlayer, ActionEnum action, int bet) {
+		switch(action) {
+			case FOLD:
+				removePlayerFromPot(currentPlayer);
+			break;
+			
+			case CALL:
+				havePlayed.set(playersInHand.indexOf(currentPlayer), true);
+				pot += highestBet - currentPlayer.getBet();
+				currentPlayer.setBet(highestBet);
+			break;
+			
+			case CHECK:
+				havePlayed.set(playersInHand.indexOf(currentPlayer), true);
+			break;
+			
+			case BET: case RAISE:
+				for(int i = 0; i < havePlayed.size(); i++) {
+					if(i != playersInHand.indexOf(currentPlayer)) {
+						havePlayed.set(i, false);
+					} else {
+						havePlayed.set(i, true);
+					}
+				}
+				currentPlayer.setBet(bet);
+				highestBet = bet;
+				pot += highestBet;
+				highestBetter = currentPlayer;
+			break;		
+		}
+	}
+	
+	public Dealer simulateMove(Agent currentPlayer, ActionEnum action) {
+		resetBets();
+		resetHavePlayed();
+		highestBet = 0;
+		highestBetter = getButton();
+		startRound = true;
+		switch (round) {
+		case PREFLOP:
+			getBigBlind().setBlind(BIG_BLIND);
+			getSmallBlind().setBlind(SMALL_BLIND);
+			highestBetter = getBigBlind();
+			highestBet = BIG_BLIND;
+			makeMove(currentPlayer, action, 100);
+			round = Round.FLOP;
+			break;
+		case FLOP:
+			for (int i = 0; i < COMMUNITY_SIZE - 2; i++) {
+				community[i] = deck.draw();
+			}
+			makeMove(currentPlayer, action, 100);
+			round = Round.TURN;
+			break;
+		case TURN:
+			community[3] = deck.draw();
+			makeMove(currentPlayer, action, 100);
+			round = Round.RIVER;
+			break;
+		case RIVER:
+			community[4] = deck.draw();
+			makeMove(currentPlayer, action, 100);
+			round = Round.PREFLOP;
+			break;
+		}
+		return this;
 	}
 
 	public void dollPot(Agent winner) {

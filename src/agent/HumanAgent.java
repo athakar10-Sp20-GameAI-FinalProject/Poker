@@ -23,6 +23,14 @@ public class HumanAgent implements Agent {
 		this.name = name;
 	}
 	
+	public Agent makeCopy() {
+		HumanAgent copy = new HumanAgent(chips, name);
+		copy.bet = new Integer(bet);
+		copy.allIn = new Boolean(allIn);
+		copy.hand = hand.clone();
+		return copy;
+	}
+	
 
 	public ActionEnum getMove(Dealer dealer) {
 		List<ActionEnum> validActions = dealer.getValidActions(this);
