@@ -300,6 +300,8 @@ public class HandEval {
 	}
 
 	private boolean hasTwoPairs(List<Integer> joined, int match, int required) {
+		System.out.println(joined.toString());
+		System.out.println("match = " + match + " required = " + required);
 		if (required == 0) {
 			return true;
 		}
@@ -310,11 +312,12 @@ public class HandEval {
 			return hasTwoPairs(joined.subList(1, joined.size()), -1, required - 1);
 		}
 
-		return hasTwoPairs(joined.subList(1, joined.size()), joined.get(0), required - 1);
+		return hasTwoPairs(joined.subList(1, joined.size()), joined.get(0), required);
 	}
 
 	public int computeRank(Card[] joined) {
 		List<Integer> sortedCards = CardEnum.sortCards(Arrays.asList(joined));
+		
 		if (isFlush(joined, SuitEnum.allSuits())) {
 			if (isStraight(sortedCards, CardEnum.allCardEnums())) {
 				if (sortedCards.containsAll(CardEnum.allCardEnums().subList(9, 14))) {
@@ -324,28 +327,33 @@ public class HandEval {
 			}
 			return 6; // Flush
 		}
+		
+		if (isStraight(sortedCards, CardEnum.allCardEnums())) {
+			return 5; // Straight
+		}
 
 		if (isMatchingCard(sortedCards, -1, 2, 2)) {
-			if (isMatchingCard(sortedCards, -1, 4, 4)) {
+			
+			List<Integer> removedDupAce = sortedCards.stream().filter(x -> x != 1).collect(Collectors.toList());
+			System.out.println(removedDupAce.toString());
+
+			
+			if (isMatchingCard(removedDupAce, -1, 4, 4)) {
 				return 8; // Four of a Kind
 			}
 
-			if (isMatchingCard(sortedCards, -1, 3, 3)) {
-				if (hasTwoPairs(sortedCards, -1, 2)) {
+			if (isMatchingCard(removedDupAce, -1, 3, 3)) {
+				if (hasTwoPairs(removedDupAce, -1, 2)) {
 					return 7; // Full House
 				}
 				return 4; // Triple
 			}
 
-			//if (hasTwoPairs(sortedCards, -1, 2)) { // Two Pair
-			//	return 3; // Two Pair
-			//}
+			if (hasTwoPairs(removedDupAce, -1, 2)) { // Two Pair
+				return 3; // Two Pair
+			}
 			return 2; // Pair
 
-		}
-
-		if (isStraight(sortedCards, CardEnum.allCardEnums())) {
-			return 5; // Straight
 		}
 
 		return 1; // High Card

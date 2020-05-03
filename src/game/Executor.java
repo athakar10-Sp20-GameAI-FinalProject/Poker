@@ -31,7 +31,7 @@ public class Executor {
 		MCTS bot = new MCTS(STARTING_CHIPS);
 		bot.setDealer(dealer);
 		Card[] botHand = new Card[2];
-		botHand[0] = new Card(CardEnum.KING, SuitEnum.HEART);
+		botHand[0] = new Card(CardEnum.KING, SuitEnum.CLUB);
 		botHand[1] = new Card(CardEnum.ACE, SuitEnum.CLUB);
 		
 //		for(int i = 0; i < 10; i++) {
@@ -41,14 +41,24 @@ public class Executor {
 		Card[] community = new Card[5];
 		community[0] = new Card(CardEnum.SIX, SuitEnum.CLUB);
 		community[1] = new Card(CardEnum.FIVE, SuitEnum.CLUB);
-		community[2] = new Card(CardEnum.KING, SuitEnum.DIAMOND);
-//		community[3] = new Card(CardEnum.THREE, SuitEnum.HEART);
-//		community[4] = new Card(CardEnum.TWO, SuitEnum.HEART);
-		for(int i = 0; i < 10; i++) {
-			System.out.println();
-			bot.root.setProbabilities(community, botHand);
+		community[2] = new Card(CardEnum.ACE, SuitEnum.DIAMOND);
+		community[3] = new Card(CardEnum.ACE, SuitEnum.HEART);
+		community[4] = new Card(CardEnum.ACE, SuitEnum.SPADE);
+//		for(int i = 0; i < 10; i++) {
+//			System.out.println();
+//			bot.root.setProbabilities(community, botHand);
+//		}
+		
+		Card[] joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
+		for(int i = 0; i < Dealer.HAND_SIZE; i++) {
+			joined[i] = botHand[i];
+		}
+		for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
+			joined[i + Dealer.HAND_SIZE] = community[i];
 		}
 		
+		HandEval eval = new HandEval(1,Arrays.asList(bot));
+		System.out.println(eval.computeRank(joined));
 		
 		while (!dealer.isGameOver()) {
 			dealer.deal();
