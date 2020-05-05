@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.AbstractList;
 import java.util.stream.Collectors;
 
 import agent.Agent;
@@ -80,7 +81,7 @@ public class HandEval {
 					joined[i + Dealer.COMMUNITY_SIZE] = hand[i];
 				}
 
-				pairedCardsValue = onlyDuplicates(CardEnum.sortCards(Arrays.asList(joined)), Collections.emptyList())
+				pairedCardsValue = onlyDuplicates(CardEnum.sortCards(new ArrayList<Card>(Arrays.asList(joined))), new ArrayList<Integer>())
 						.stream().reduce(0, (a, b) -> a + b);
 
 				if (pairedCardsValue > highestScore) {
@@ -106,7 +107,7 @@ public class HandEval {
 					joined[i + Dealer.COMMUNITY_SIZE] = hand[i];
 				}
 
-				matchingCards = onlyDuplicates(CardEnum.sortCards(Arrays.asList(joined)), Collections.emptyList());
+				matchingCards = onlyDuplicates(CardEnum.sortCards(new ArrayList<Card>(Arrays.asList(joined))), new ArrayList<Integer>());
 				
 				int firstOccurance = 0;
 				int firstMatch, secondMatch; // firstMatch can be triple for fullHouse
@@ -238,7 +239,10 @@ public class HandEval {
 			return duplicates;
 		}
 
-		int first = joined.get(0);
+		Integer first = joined.get(0);
+		if(first == null) {
+			System.out.println("got null");
+		}
 
 		if (joined.contains(first) || duplicates.contains(first)) {
 			duplicates.add(first);
@@ -313,6 +317,7 @@ public class HandEval {
 		return hasTwoPairs(joined.subList(1, joined.size()), joined.get(0), required);
 	}
 	
+	@SuppressWarnings("serial")
 	private List<Card> findSuited(Card[] joined) {
 		HashMap<String, List<Card>> suits = new HashMap<String, List<Card>>() {{
 			put("H", new ArrayList<Card>());

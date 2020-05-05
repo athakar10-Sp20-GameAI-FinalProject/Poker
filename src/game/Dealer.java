@@ -12,7 +12,7 @@ import agent.Agent;
 public class Dealer {
 
 	public enum Round {
-		PREFLOP, FLOP, TURN, RIVER;
+		PREFLOP, FLOP, TURN, RIVER, END;
 	}
 
 	public static final int HAND_SIZE = 2;
@@ -40,7 +40,7 @@ public class Dealer {
 		this.players = players;
 		playersInHand = new ArrayList<Agent>(players);
 		numPlayers = playersInHand.size();
-		numPlayersInHand = numPlayers;
+		numPlayersInHand = new Integer(numPlayers);
 		bigBlind = 0;
 		community = new Card[COMMUNITY_SIZE];
 		highestBet = BIG_BLIND;
@@ -62,27 +62,30 @@ public class Dealer {
 		ret.numPlayers = new Integer(numPlayers);
 		ret.bigBlind = new Integer(bigBlind);
 		ret.highestBet = new Integer(highestBet);
-		ret.highestBetter = highestBetter;
+		ret.highestBetter = highestBetter; // don't copy, please
 		ret.round = round;
 		ret.pot = new Integer(pot);
-		ret.community = community;
-		ret.numPlayersInHand = numPlayersInHand;
+		ret.community = getCommunity();
+		ret.numPlayersInHand = new Integer(numPlayersInHand);
 		ret.startRound = startRound;
-		ret.havePlayed = havePlayed;
+		ret.havePlayed = new ArrayList<>(havePlayed);
 		return ret;
 	}
 
 	public boolean isPotOver() {
-		return numPlayersInHand <= 1 || round == Round.PREFLOP;
+		return numPlayersInHand <= 1 || round == Round.END;
 	}
 	
 	public Agent findWinner() {
+		if(numPlayersInHand == 1) {
+			return playersInHand.get(0);
+		}
 		handEval.setCommunity(community);
 		return handEval.findWinner();
 	}
 	
 	public boolean isWinning(Agent player) {
-		return handEval.findWinner() == player;
+		return handEval.findWinner().equals(player);
 	}
 
 	public List<ActionEnum> getValidActions(Agent player) {
@@ -161,6 +164,9 @@ public class Dealer {
 			community[4] = deck.draw();
 			printCommunity();
 			parseActions(-1);
+			round = Round.END;
+			break;
+		case END:
 			round = Round.PREFLOP;
 			break;
 		default:
@@ -179,8 +185,9 @@ public class Dealer {
 
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
-		while (!(allBetsEqual() && allPlayed()) || startRound) {
+		while (!(allBetsEqual() || allPlayed()) || startRound) {
 
+			if(isPotOver()) break;
 			
 			System.out.println("\n" + currentPlayer.getName() + "'s bet: " + currentPlayer.getBet());
 			
@@ -299,24 +306,27 @@ public class Dealer {
 			getSmallBlind().setBlind(SMALL_BLIND);
 			highestBetter = getBigBlind();
 			highestBet = BIG_BLIND;
-			makeMove(currentPlayer, action, 100);
+			makeMove(currentPlayer, action, currentPlayer.getBet());
 			round = Round.FLOP;
 			break;
 		case FLOP:
 			for (int i = 0; i < COMMUNITY_SIZE - 2; i++) {
 				community[i] = deck.draw();
 			}
-			makeMove(currentPlayer, action, 100);
+			makeMove(currentPlayer, action, currentPlayer.getBet());
 			round = Round.TURN;
 			break;
 		case TURN:
 			community[3] = deck.draw();
-			makeMove(currentPlayer, action, 100);
+			makeMove(currentPlayer, action, currentPlayer.getBet());
 			round = Round.RIVER;
 			break;
 		case RIVER:
 			community[4] = deck.draw();
-			makeMove(currentPlayer, action, 100);
+			makeMove(currentPlayer, action, currentPlayer.getBet());
+			round = Round.END;
+			break;
+		case END:
 			round = Round.PREFLOP;
 			break;
 		}
@@ -330,12 +340,11 @@ public class Dealer {
 		System.out.println("Pot of " + pot + " goes to " + winner.getName());
 		System.out.println("----------------------------------\n\nNew hand");
 		round = Round.PREFLOP;
-		playersInHand = players;
+		playersInHand = new ArrayList<Agent>(players);
 		bigBlind = (bigBlind + 1) % numPlayers;
 		highestBet = BIG_BLIND;
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
-		
 		resetBets();
 	}
 
@@ -370,6 +379,10 @@ public class Dealer {
 			Card c2 = deck.draw();
 			player.setHand(c1, c2);
 		}
+	}
+	
+	public void resetDeck() {
+		deck = new Deck();
 	}
 
 	public Agent getNextPlayer(int offset) {
@@ -414,6 +427,18 @@ public class Dealer {
 	
 	public HandEval getEval() {
 		return handEval;
+	}
+	
+	public Card[] getCommunity() {
+		Card[] copy = new Card[COMMUNITY_SIZE];
+		for(int i = 0; i < copy.length; i++) {
+			if(community[i] == null) {
+				copy[i] = null;
+			} else {
+				copy[i] = community[i].makeCopy();
+			}
+		}
+		return copy;
 	}
 
 }

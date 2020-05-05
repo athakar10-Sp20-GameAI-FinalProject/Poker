@@ -2,8 +2,8 @@ package game;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 
 public class Deck {
     private final int newSize = 52;
@@ -37,6 +37,10 @@ public class Deck {
 
     public void shuffle() {
         Collections.shuffle(this.deck);
+    }
+    
+    public boolean remove(Card c) {
+    	return deck.remove(c);
     }
     
     public List<Card> getDeck() {

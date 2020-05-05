@@ -8,6 +8,7 @@ import game.ActionEnum;
 import game.Card;
 import game.Dealer;
 import game.Deck;
+import game.HandEval;
 
 public class Node {
 	
@@ -17,16 +18,15 @@ public class Node {
 	public List<Node> children;
 	public int simulations;
 	public double wins;
-	public Dealer gameState = null;
-	public int turn;
 	public boolean isTerminal;
 	public int winner;
 	public ActionEnum moveToGetHere;
-	// Maps rank (1-10) to probabilities of that hand
-	public HashMap<Integer, Double> probabilities = new HashMap<>();
+	public HandEval eval;
 	
-	protected Node(Dealer dealer)
+	
+	protected Node(HandEval eval)
 	{
+		this.eval = eval;
 		this.isExpanded = false;
 		this.isVisited = false;
 		this.isTerminal = false;
@@ -34,23 +34,43 @@ public class Node {
 		this.simulations = 0;
 		this.wins = 0;
 		this.children = new ArrayList<Node>();
-		this.gameState = dealer;
+	}
+	
+	public Node makeCopy() {
+		Node copy = new Node(eval);
+		copy.isExpanded = new Boolean(isExpanded);
+		copy.isVisited = new Boolean(isVisited);
+		copy.isTerminal = new Boolean(isTerminal);
+		if(parent != null) copy.parent = parent.makeCopy();
+		copy.simulations = new Integer(simulations);
+		copy.wins = new Double(wins);
+		copy.moveToGetHere = moveToGetHere;
+		copy.children = new ArrayList<Node>(children);
+		return copy;
 	}
 	
 	
-	public void setProbabilities(Card[] community, Card[] hand)
+	public HashMap<Integer, Double> getProbabilities(Card[] community, Card[] hand)
 	{
+		// Maps rank (1-10) to probabilities of that hand
+		HashMap<Integer, Double> probabilities = new HashMap<>();
 		int numSims = 5000;
 		int curr = 0;
 		int[] ranks = new int[10];
 		while(curr < numSims) {
-			Deck copyDeck = gameState.getDeck().makeCopy();
+			Deck copyDeck = new Deck();
 			copyDeck.shuffle();
 			Card[] joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
 			for(int i = 0; i < Dealer.HAND_SIZE; i++) {
+				if(hand[i] != null) {
+					copyDeck.remove(hand[i]);
+				}
 				joined[i] = hand[i];
 			}
 			for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
+				if(community[i] != null) {
+					copyDeck.remove(community[i]);
+				}
 				joined[i + Dealer.HAND_SIZE] = community[i];
 			}
 			for(int i = 0; i < joined.length; i++) {
@@ -58,18 +78,18 @@ public class Node {
 					joined[i] = copyDeck.draw();
 				}
 			}
-			int rank = gameState.getEval().computeRank(joined);
+			int rank = eval.computeRank(joined);
 			ranks[rank-1]++;
-			
 			curr++;
 		}
 		for(int i = 0; i < ranks.length; i++) {
 			probabilities.put(i, (double)ranks[i] / (double)numSims);
 		}
-		printProbabilities();
+		//printProbabilities(probabilities);
+		return probabilities;
 	}
 	
-	public void printProbabilities() {
+	public void printProbabilities(HashMap<Integer, Double> probabilities) {
 		for(Integer key : probabilities.keySet()) {
 			System.out.println("Rank : " + (key+1) + ", Probability = " + probabilities.get(key));
 		}

@@ -18,6 +18,10 @@ public class Card {
 		this.suit = suit;
 	}
 	
+	public Card makeCopy() {
+		return new Card(card, suit);
+	}
+	
 
 	public static SuitEnum getSameSuit(Card[] joined, List<SuitEnum> suits) {
 

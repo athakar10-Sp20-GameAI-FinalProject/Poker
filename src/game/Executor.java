@@ -45,12 +45,15 @@ public class Executor {
 //		community[2] = new Card(CardEnum.TEN, SuitEnum.CLUB);
 //		community[3] = new Card(CardEnum.FIVE, SuitEnum.CLUB);
 //		community[4] = new Card(CardEnum.FOUR, SuitEnum.CLUB);
-//		for(int i = 0; i < 10; i++) {
+//		for(int i = 0; i < 1; i++) {
 //			System.out.println();
-//			bot.root.setProbabilities(community, botHand);
+//			bot.root.getProbabilities(community, botHand);
+//			bot.root.getProbabilities(community, new Card[2]);
 //		}
 		
 		while (!dealer.isGameOver()) {
+			System.out.println(dealer.isGameOver());
+
 			dealer.deal();
 			do {
 				dealer.playRound();
@@ -59,11 +62,15 @@ public class Executor {
 			Agent winner = dealer.findWinner();
 			//System.out.println(winner.getName());
 			dealer.dollPot(winner);
+			players = new ArrayList<Agent>(players);
 			for (Agent player : players) {
 				if (player.getChips() == 0) {
 					dealer.removePlayerFromGame(player);
+					System.out.println(player);
 				}
 			}
+			System.out.println(dealer.isGameOver());
+			dealer.resetDeck();
 		}
 
 	}
