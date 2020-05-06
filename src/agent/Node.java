@@ -58,7 +58,7 @@ public class Node implements Callable<Void> {
 	
 	@Override
 	public Void call() throws Exception {
-		doSims(ranks);
+		doSims();
 		return null;
 	}
 	
@@ -67,14 +67,14 @@ public class Node implements Callable<Void> {
 		this.hand = hand;
 		joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
 		for(int i = 0; i < Dealer.HAND_SIZE; i++) {
-			joined[i] = hand[i];
+			joined[i] = this.hand[i];
 		}
 		for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
-			joined[i + Dealer.HAND_SIZE] = community[i];
+			joined[i + Dealer.HAND_SIZE] = this.community[i];
 		}
 	}
 	
-	public void doSims(int[] ranks) {
+	public void doSims() {
 		Deck copyDeck = new Deck();
 		copyDeck.shuffle();
 		for(int i = 0; i < joined.length; i++) {
@@ -85,23 +85,24 @@ public class Node implements Callable<Void> {
 			}
 		}
 		int rank = eval.computeRank(joined);
-		ranks[rank-1]++;
+		this.ranks[rank-1]++;
 	}
 	
-	public HashMap<Integer, Double> getProbabilities(Card[] community, Card[] hand, long sims)
+	public HashMap<Integer, Double> getProbabilities(long sims)
 	{
 		// Maps rank (1-10) to probabilities of that hand
 		HashMap<Integer, Double> probabilities = new HashMap<>();
 		long curr = 0;
 		ranks = new int[10];
 		while(curr < sims) {
-			doSims(ranks);
+			doSims();
 			curr++;
 		}
 		for(int i = 0; i < ranks.length; i++) {
+			System.out.println("rank " + ranks[i]);
 			probabilities.put(i, (double)ranks[i] / (double)sims);
 		}
-		//printProbabilities(probabilities);
+		printProbabilities(probabilities);
 		return probabilities;
 	}
 	
@@ -110,6 +111,8 @@ public class Node implements Callable<Void> {
 		// Maps rank (1-10) to probabilities of that hand
 		HashMap<Integer, Double> probabilities = new HashMap<>();
 		long curr = 0;
+		this.community = community;
+		this.hand = hand;
 		ExecutorService executor = Executors.newFixedThreadPool(16);
 		ranks = new int[10];
 		while(curr < sims) {
@@ -122,9 +125,10 @@ public class Node implements Callable<Void> {
 		}
 		executor.shutdown();
 		for(int i = 0; i < ranks.length; i++) {
+			System.out.println("rank " + ranks[i]);
 			probabilities.put(i, (double)ranks[i] / (double)sims);
 		}
-		//printProbabilities(probabilities);
+		printProbabilities(probabilities);
 		return probabilities;
 	}
 	

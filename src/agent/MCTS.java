@@ -162,10 +162,13 @@ public class MCTS implements Agent, Comparable<Agent> {
 		final long numSims = 5000;
 		
 		long startTime = System.currentTimeMillis();
+		
 		leaf.initProbabilities(game.getCommunity(), hand, numSims);
-		HashMap<Integer, Double> ourProbs = leaf.getProbabilities(game.getCommunity(), hand, numSims);
+		HashMap<Integer, Double> ourProbs = leaf.getProbabilities(numSims);
+		
 		leaf.initProbabilities(game.getCommunity(), new Card[2], numSims);
-		HashMap<Integer, Double> otherProbs = leaf.getProbabilities(game.getCommunity(), new Card[2], numSims);
+		HashMap<Integer, Double> otherProbs = leaf.getProbabilities(numSims);
+		
 		long endTime = System.currentTimeMillis();
 		System.out.println("Time taken to calculate probabilites sequentially: " + ((double)(endTime - startTime) / 1000) + " seconds");
 		
