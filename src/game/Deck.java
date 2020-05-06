@@ -36,7 +36,7 @@ public class Deck {
     }
 
     public void shuffle() {
-        Collections.shuffle(this.deck);
+        Collections.shuffle(this.deck, new Random(System.currentTimeMillis()));
     }
     
     public boolean remove(Card c) {

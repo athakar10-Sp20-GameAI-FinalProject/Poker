@@ -1,6 +1,7 @@
 package agent;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -25,10 +26,9 @@ public class Node implements Callable<Void> {
 	public int winner;
 	public ActionEnum moveToGetHere;
 	public HandEval eval;
-	private Card[] community;
-	private Card[] hand;
+	private Card[] community = new Card[Dealer.COMMUNITY_SIZE];
+	private Card[] hand = new Card[Dealer.HAND_SIZE];
 	private int[] ranks = new int[10];
-	private Card[] joined;
 	
 	
 	protected Node(HandEval eval)
@@ -62,21 +62,21 @@ public class Node implements Callable<Void> {
 		return null;
 	}
 	
-	public void initProbabilities(Card[] community, Card[] hand, long sims) {
+	public void initProbabilities(Card[] community, Card[] hand) {
 		this.community = community;
 		this.hand = hand;
-		joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
-		for(int i = 0; i < Dealer.HAND_SIZE; i++) {
-			joined[i] = this.hand[i];
-		}
-		for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
-			joined[i + Dealer.HAND_SIZE] = this.community[i];
-		}
 	}
 	
 	public void doSims() {
 		Deck copyDeck = new Deck();
 		copyDeck.shuffle();
+		Card[] joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
+		for(int i = 0; i < Dealer.HAND_SIZE; i++) {
+			joined[i] = hand[i];
+		}
+		for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
+			joined[i + Dealer.HAND_SIZE] = community[i];
+		}
 		for(int i = 0; i < joined.length; i++) {
 			if(joined[i] == null) {
 				joined[i] = copyDeck.draw();
@@ -98,6 +98,7 @@ public class Node implements Callable<Void> {
 			doSims();
 			curr++;
 		}
+		
 		for(int i = 0; i < ranks.length; i++) {
 			System.out.println("rank " + ranks[i]);
 			probabilities.put(i, (double)ranks[i] / (double)sims);
@@ -111,8 +112,6 @@ public class Node implements Callable<Void> {
 		// Maps rank (1-10) to probabilities of that hand
 		HashMap<Integer, Double> probabilities = new HashMap<>();
 		long curr = 0;
-		this.community = community;
-		this.hand = hand;
 		ExecutorService executor = Executors.newFixedThreadPool(16);
 		ranks = new int[10];
 		while(curr < sims) {

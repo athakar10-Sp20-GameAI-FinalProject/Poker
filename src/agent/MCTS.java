@@ -163,10 +163,10 @@ public class MCTS implements Agent, Comparable<Agent> {
 		
 		long startTime = System.currentTimeMillis();
 		
-		leaf.initProbabilities(game.getCommunity(), hand, numSims);
+		leaf.initProbabilities(game.getCommunity(), hand);
 		HashMap<Integer, Double> ourProbs = leaf.getProbabilities(numSims);
 		
-		leaf.initProbabilities(game.getCommunity(), new Card[2], numSims);
+		leaf.initProbabilities(game.getCommunity(), new Card[2]);
 		HashMap<Integer, Double> otherProbs = leaf.getProbabilities(numSims);
 		
 		long endTime = System.currentTimeMillis();
