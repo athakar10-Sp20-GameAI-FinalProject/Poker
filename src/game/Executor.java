@@ -35,9 +35,9 @@ public class Executor {
 //		botHand[0] = new Card(CardEnum.KING, SuitEnum.CLUB);
 //		botHand[1] = new Card(CardEnum.NINE, SuitEnum.CLUB);
 		
-//		for(int i = 0; i < 10; i++) {
+//		for(int i = 0; i < 1; i++) {
 //			System.out.println();
-//			bot.root.setProbabilities(new Card[5], botHand);
+//			bot.checkProbabilities(bot.root, dealer);
 //		}
 //		Card[] community = new Card[5];
 //		community[0] = new Card(CardEnum.QUEEN, SuitEnum.CLUB);
@@ -69,7 +69,7 @@ public class Executor {
 					System.out.println(player);
 				}
 			}
-			System.out.println(dealer.isGameOver());
+			//System.out.println(dealer.isGameOver());
 			dealer.resetDeck();
 		}
 

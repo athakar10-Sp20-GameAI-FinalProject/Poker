@@ -25,8 +25,9 @@ public class Card {
 
 	public static SuitEnum getSameSuit(Card[] joined, List<SuitEnum> suits) {
 
-		Card[] flushCards = (Card[]) Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0))
-				.collect(Collectors.toList()).toArray();
+		List<Card> temp = Arrays.stream(joined).filter(x -> x.getSuit() == suits.get(0))
+				.collect(Collectors.toList());
+		Card[] flushCards = temp.toArray(new Card[temp.size()]);
 
 		if(flushCards.length >= Dealer.COMMUNITY_SIZE) {
 			return suits.get(0);

@@ -1,6 +1,5 @@
 package agent;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -9,9 +8,9 @@ import game.ActionEnum;
 import game.Card;
 import game.Dealer;
 
-public class MCTS implements Agent {
+public class MCTS implements Agent, Comparable<Agent> {
 
-	private final long timeLimit = 10000;
+	private final long timeLimit = 60000;
 	
 	private int chips;
 	private Card[] hand;
@@ -20,7 +19,7 @@ public class MCTS implements Agent {
 	private final String name = "BOT";
 	private Dealer game;
 	private Random rand = new Random();
-	private Node root;
+	public Node root;
 	
 	
 	public MCTS(int chips) {
@@ -159,9 +158,26 @@ public class MCTS implements Agent {
 		return null;
 	}
 	
-	private boolean checkProbabilities(Node leaf, Dealer rolloutBoard) {
-		HashMap<Integer, Double> ourProbs = leaf.getProbabilities(game.getCommunity(), hand);
-		HashMap<Integer, Double> otherProbs = leaf.getProbabilities(game.getCommunity(), new Card[2]);
+	public boolean checkProbabilities(Node leaf, Dealer rolloutBoard) {
+		final long numSims = 5000;
+		
+		long startTime = System.currentTimeMillis();
+		leaf.initProbabilities(game.getCommunity(), hand, numSims);
+		HashMap<Integer, Double> ourProbs = leaf.getProbabilities(game.getCommunity(), hand, numSims);
+		leaf.initProbabilities(game.getCommunity(), new Card[2], numSims);
+		HashMap<Integer, Double> otherProbs = leaf.getProbabilities(game.getCommunity(), new Card[2], numSims);
+		long endTime = System.currentTimeMillis();
+		System.out.println("Time taken to calculate probabilites sequentially: " + ((double)(endTime - startTime) / 1000) + " seconds");
+		
+//		startTime = System.currentTimeMillis();
+//		leaf.initProbabilities(game.getCommunity(), hand, numSims);
+//		HashMap<Integer, Double> ourProbsPar = leaf.getProbabilitiesPar(game.getCommunity(), hand, numSims);
+//		leaf.initProbabilities(game.getCommunity(), new Card[2], numSims);
+//		HashMap<Integer, Double> otherProbsPar = leaf.getProbabilitiesPar(game.getCommunity(), new Card[2], numSims);
+//		endTime = System.currentTimeMillis();
+//		System.out.println("Time taken to calculate probabilites in parallel: " + ((double)(endTime - startTime) / 1000) + " seconds");
+		
+		
 		// weighted sum of our probability distribution of good hands using standard poker ranks
 		double ourSum = 0.0;
 		double otherSum = 0.0;
@@ -171,7 +187,6 @@ public class MCTS implements Agent {
 		for(Integer rank : otherProbs.keySet()) {
 			otherSum += (otherProbs.get(rank) * rank);
 		}
-//		System.out.println(ourSum >= otherSum);
 		return ourSum >= otherSum;
 	}
 	
@@ -374,5 +389,10 @@ public class MCTS implements Agent {
 	
 	public String getName() {
 		return name;
+	}
+	
+	@Override
+	public int compareTo(Agent o) {
+		return o.getName().compareTo(name);
 	}
 }

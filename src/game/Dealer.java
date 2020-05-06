@@ -2,10 +2,9 @@ package game;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.TreeMap;
 
 import agent.Agent;
 
@@ -22,7 +21,7 @@ public class Dealer {
 
 	private Deck deck;
 	private List<Agent> players;
-	private List<Agent> playersInHand;
+	private TreeMap<Agent, Boolean> playersInHand;  // boolean tells whether player has played yet
 	private int numPlayers;
 	private int numPlayersInHand;
 	private int bigBlind;
@@ -30,16 +29,18 @@ public class Dealer {
 	private Agent highestBetter;
 	private Round round;
 	private int pot;
-	private boolean startRound;
-	private ArrayList<Boolean> havePlayed;
 	private Card[] community;
 	private HandEval handEval;
 
 	public Dealer(List<Agent> players) {
 		deck = new Deck();
 		this.players = players;
-		playersInHand = new ArrayList<Agent>(players);
-		numPlayers = playersInHand.size();
+		playersInHand = new TreeMap<Agent, Boolean>() {{
+			for(Agent player : players) {
+				put(player, false);
+			}
+		}};
+		numPlayers = new Integer(playersInHand.size());
 		numPlayersInHand = new Integer(numPlayers);
 		bigBlind = 0;
 		community = new Card[COMMUNITY_SIZE];
@@ -47,18 +48,13 @@ public class Dealer {
 		highestBetter = getBigBlind();
 		pot = BIG_BLIND + SMALL_BLIND;
 		round = Round.PREFLOP;
-		startRound = true;
-		havePlayed = new ArrayList<Boolean>();
-		for(Agent p : players) {
-			havePlayed.add(false);
-		}
-		handEval = new HandEval(numPlayersInHand, playersInHand);
+		handEval = new HandEval(numPlayersInHand, Arrays.asList(playersInHand.keySet().toArray(new Agent[numPlayersInHand])));
 	}
 
 	public Dealer makeCopy() {
 		Dealer ret = new Dealer(players);
 		ret.deck = deck.makeCopy();
-		ret.playersInHand = new ArrayList<>(playersInHand);
+		ret.playersInHand = new TreeMap<>(playersInHand);
 		ret.numPlayers = new Integer(numPlayers);
 		ret.bigBlind = new Integer(bigBlind);
 		ret.highestBet = new Integer(highestBet);
@@ -67,8 +63,6 @@ public class Dealer {
 		ret.pot = new Integer(pot);
 		ret.community = getCommunity();
 		ret.numPlayersInHand = new Integer(numPlayersInHand);
-		ret.startRound = startRound;
-		ret.havePlayed = new ArrayList<>(havePlayed);
 		return ret;
 	}
 
@@ -78,7 +72,7 @@ public class Dealer {
 	
 	public Agent findWinner() {
 		if(numPlayersInHand == 1) {
-			return playersInHand.get(0);
+			return playersInHand.keySet().iterator().next();
 		}
 		handEval.setCommunity(community);
 		return handEval.findWinner();
@@ -113,13 +107,13 @@ public class Dealer {
 	}
 	
 	private void resetHavePlayed() {
-		for(int i = 0; i < havePlayed.size(); i++) {
-			havePlayed.set(i, false);
+		for(Agent player : playersInHand.keySet()) {
+			playersInHand.put(player, false);
 		}
 	}
 	
 	private boolean allPlayed() {
-		for(Boolean b : havePlayed) {
+		for(Boolean b : playersInHand.values()) {
 			if(!b) {
 				return false;
 			}
@@ -132,10 +126,15 @@ public class Dealer {
 		resetHavePlayed();
 		highestBet = 0;
 		highestBetter = getButton();
-		startRound = true;
 		switch (round) {
 		case PREFLOP:
 			System.out.println("PRE FLOP");
+			for(int i = 0; i < numPlayers; i++) {
+				Agent player = players.get(i);
+				if(!playersInHand.keySet().contains(player)) {
+					playersInHand.put(player, false);
+				}
+			}
 			getBigBlind().setBlind(BIG_BLIND);
 			getSmallBlind().setBlind(SMALL_BLIND);
 			highestBetter = getBigBlind();
@@ -185,8 +184,8 @@ public class Dealer {
 
 	private void parseActions(int position) {
 		Agent currentPlayer = getNextPlayer(position);
-		while (!(allBetsEqual() || allPlayed()) || startRound) {
-
+		
+		while (!allBetsEqual() || !allPlayed()) {
 			if(isPotOver()) break;
 			
 			System.out.println("\n" + currentPlayer.getName() + "'s bet: " + currentPlayer.getBet());
@@ -209,6 +208,7 @@ public class Dealer {
 				break;
 				
 				case CALL:
+					System.out.println("highest bet when call: " + highestBet);
 					makeMove(currentPlayer, action, 0);
 				break;
 				
@@ -223,7 +223,7 @@ public class Dealer {
 				break;
 				
 				case BET: 
-					if (highestBet == BIG_BLIND || (currentBet - BIG_BLIND * 2) >= 0 || startRound) {
+					if (highestBet == BIG_BLIND || (currentBet - BIG_BLIND * 2) >= 0) {
 						makeMove(currentPlayer, action, currentBet);
 					} else {
 						position--;
@@ -252,60 +252,62 @@ public class Dealer {
 				default:
 					position--;
 			}
-			startRound = false;
 			System.out.println();
 			System.out.println("Highest Bet: " + highestBet + " Pot: " + pot);		
 			position++;
 			
 			currentPlayer = getNextPlayer(position);
-			
 		}
+		System.out.println("exit parse actions");
 	}
 	
 	public void makeMove(Agent currentPlayer, ActionEnum action, int bet) {
+		
 		switch(action) {
 			case FOLD:
 				removePlayerFromPot(currentPlayer);
 			break;
 			
 			case CALL:
-				havePlayed.set(playersInHand.indexOf(currentPlayer), true);
-				pot += highestBet - currentPlayer.getBet();
-				currentPlayer.setBet(highestBet);
+				int highBet = new Integer(highestBet);
+				playersInHand.put(currentPlayer, true);
+				pot += highBet - currentPlayer.getBet();
+				System.out.println(currentPlayer.getBet());
+				currentPlayer.setBet(highBet);
+				System.out.println(currentPlayer.getBet());
 			break;
 			
 			case CHECK:
-				havePlayed.set(playersInHand.indexOf(currentPlayer), true);
+				playersInHand.put(currentPlayer, true);
 			break;
 			
 			case BET: case RAISE:
-				for(int i = 0; i < havePlayed.size(); i++) {
-					if(i != playersInHand.indexOf(currentPlayer)) {
-						havePlayed.set(i, false);
+				for(Agent player : playersInHand.keySet()) {
+					if(!player.equals(currentPlayer)) {
+						playersInHand.put(player, false);
 					} else {
-						havePlayed.set(i, true);
+						playersInHand.put(player, true);
 					}
 				}
-				currentPlayer.setBet(bet);
+				currentPlayer.setBet(new Integer(bet));
 				highestBet = bet;
-				pot += highestBet;
+				pot += bet;
 				highestBetter = currentPlayer;
 			break;		
 		}
 	}
 	
 	public Dealer simulateMove(Agent currentPlayer, ActionEnum action) {
-		resetBets();
-		resetHavePlayed();
-		highestBet = 0;
-		highestBetter = getButton();
-		startRound = true;
+//		resetBets();
+//		resetHavePlayed();
+//		highestBet = 0;
+//		highestBetter = getButton();
 		switch (round) {
 		case PREFLOP:
-			getBigBlind().setBlind(BIG_BLIND);
-			getSmallBlind().setBlind(SMALL_BLIND);
-			highestBetter = getBigBlind();
-			highestBet = BIG_BLIND;
+//			getBigBlind().setBlind(BIG_BLIND);
+//			getSmallBlind().setBlind(SMALL_BLIND);
+//			highestBetter = getBigBlind();
+//			highestBet = BIG_BLIND;
 			makeMove(currentPlayer, action, currentPlayer.getBet());
 			round = Round.FLOP;
 			break;
@@ -340,7 +342,12 @@ public class Dealer {
 		System.out.println("Pot of " + pot + " goes to " + winner.getName());
 		System.out.println("----------------------------------\n\nNew hand");
 		round = Round.PREFLOP;
-		playersInHand = new ArrayList<Agent>(players);
+		playersInHand = new TreeMap<Agent, Boolean>() {{
+			for(Agent player : players) {
+				put(player, false);
+			}
+		}};
+		numPlayersInHand = playersInHand.size();
 		bigBlind = (bigBlind + 1) % numPlayers;
 		highestBet = BIG_BLIND;
 		highestBetter = getBigBlind();
@@ -349,8 +356,8 @@ public class Dealer {
 	}
 
 	private boolean allBetsEqual() {
-		for (Agent player : playersInHand) {
-			if (player.getBet() < highestBet) {
+		for (Agent player : playersInHand.keySet()) {
+			if (player.getBet() != highestBet) {
 				return false;
 			}
 		}
@@ -362,7 +369,6 @@ public class Dealer {
 	}
 
 	public void removePlayerFromPot(Agent player) {
-		havePlayed.remove(playersInHand.indexOf(player));
 		playersInHand.remove(player);
 		numPlayersInHand--;
 	}
@@ -386,19 +392,19 @@ public class Dealer {
 	}
 
 	public Agent getNextPlayer(int offset) {
-		return playersInHand.get((bigBlind + offset + numPlayersInHand) % numPlayersInHand);
+		return playersInHand.keySet().toArray(new Agent[numPlayersInHand])[(bigBlind + offset + numPlayersInHand) % numPlayersInHand];
 	}
 
 	public Agent getBigBlind() {
-		return playersInHand.get(bigBlind);
+		return playersInHand.keySet().toArray(new Agent[numPlayersInHand])[bigBlind];
 	}
 
 	public Agent getSmallBlind() {
-		return playersInHand.get((bigBlind + numPlayersInHand - 1) % numPlayersInHand);
+		return playersInHand.keySet().toArray(new Agent[numPlayersInHand])[(bigBlind + numPlayersInHand - 1) % numPlayersInHand];
 	}
 
 	public Agent getButton() {
-		return playersInHand.get((bigBlind + numPlayersInHand - 2) % numPlayersInHand);
+		return playersInHand.keySet().toArray(new Agent[numPlayersInHand])[(bigBlind + numPlayersInHand - 2) % numPlayersInHand];
 	}
 
 	public Agent getHighestBetter() {
@@ -414,7 +420,7 @@ public class Dealer {
 	}
 	
 	public List<Agent> getPlayersInHand() {
-		return playersInHand;
+		return Arrays.asList(playersInHand.keySet().toArray(new Agent[numPlayersInHand]));
 	}
 	
 	public Deck getDeck() {

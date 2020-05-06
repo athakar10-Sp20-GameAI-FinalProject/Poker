@@ -3,6 +3,9 @@ package agent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import game.ActionEnum;
 import game.Card;
@@ -10,7 +13,7 @@ import game.Dealer;
 import game.Deck;
 import game.HandEval;
 
-public class Node {
+public class Node implements Callable<Void> {
 	
 	public boolean isExpanded;
 	public boolean isVisited;
@@ -22,6 +25,10 @@ public class Node {
 	public int winner;
 	public ActionEnum moveToGetHere;
 	public HandEval eval;
+	private Card[] community;
+	private Card[] hand;
+	private int[] ranks = new int[10];
+	private Card[] joined;
 	
 	
 	protected Node(HandEval eval)
@@ -49,41 +56,73 @@ public class Node {
 		return copy;
 	}
 	
+	@Override
+	public Void call() throws Exception {
+		doSims(ranks);
+		return null;
+	}
 	
-	public HashMap<Integer, Double> getProbabilities(Card[] community, Card[] hand)
+	public void initProbabilities(Card[] community, Card[] hand, long sims) {
+		this.community = community;
+		this.hand = hand;
+		joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
+		for(int i = 0; i < Dealer.HAND_SIZE; i++) {
+			joined[i] = hand[i];
+		}
+		for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
+			joined[i + Dealer.HAND_SIZE] = community[i];
+		}
+	}
+	
+	public void doSims(int[] ranks) {
+		Deck copyDeck = new Deck();
+		copyDeck.shuffle();
+		for(int i = 0; i < joined.length; i++) {
+			if(joined[i] == null) {
+				joined[i] = copyDeck.draw();
+			} else {
+				copyDeck.remove(joined[i]);
+			}
+		}
+		int rank = eval.computeRank(joined);
+		ranks[rank-1]++;
+	}
+	
+	public HashMap<Integer, Double> getProbabilities(Card[] community, Card[] hand, long sims)
 	{
 		// Maps rank (1-10) to probabilities of that hand
 		HashMap<Integer, Double> probabilities = new HashMap<>();
-		int numSims = 5000;
-		int curr = 0;
-		int[] ranks = new int[10];
-		while(curr < numSims) {
-			Deck copyDeck = new Deck();
-			copyDeck.shuffle();
-			Card[] joined = new Card[Dealer.COMMUNITY_SIZE + Dealer.HAND_SIZE];
-			for(int i = 0; i < Dealer.HAND_SIZE; i++) {
-				if(hand[i] != null) {
-					copyDeck.remove(hand[i]);
-				}
-				joined[i] = hand[i];
-			}
-			for(int i = 0; i < Dealer.COMMUNITY_SIZE; i++) {
-				if(community[i] != null) {
-					copyDeck.remove(community[i]);
-				}
-				joined[i + Dealer.HAND_SIZE] = community[i];
-			}
-			for(int i = 0; i < joined.length; i++) {
-				if(joined[i] == null) {
-					joined[i] = copyDeck.draw();
-				}
-			}
-			int rank = eval.computeRank(joined);
-			ranks[rank-1]++;
+		long curr = 0;
+		ranks = new int[10];
+		while(curr < sims) {
+			doSims(ranks);
 			curr++;
 		}
 		for(int i = 0; i < ranks.length; i++) {
-			probabilities.put(i, (double)ranks[i] / (double)numSims);
+			probabilities.put(i, (double)ranks[i] / (double)sims);
+		}
+		//printProbabilities(probabilities);
+		return probabilities;
+	}
+	
+	public HashMap<Integer, Double> getProbabilitiesPar(Card[] community, Card[] hand, long sims)
+	{
+		// Maps rank (1-10) to probabilities of that hand
+		HashMap<Integer, Double> probabilities = new HashMap<>();
+		long curr = 0;
+		ExecutorService executor = Executors.newFixedThreadPool(16);
+		ranks = new int[10];
+		while(curr < sims) {
+			try {
+				executor.submit(this).get();
+			} catch (Exception ie) {
+				ie.printStackTrace();
+			}
+			curr++;
+		}
+		executor.shutdown();
+		for(int i = 0; i < ranks.length; i++) {
+			probabilities.put(i, (double)ranks[i] / (double)sims);
 		}
 		//printProbabilities(probabilities);
 		return probabilities;

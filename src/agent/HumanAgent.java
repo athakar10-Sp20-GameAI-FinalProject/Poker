@@ -7,14 +7,14 @@ import game.ActionEnum;
 import game.Card;
 import game.Dealer;
 
-public class HumanAgent implements Agent {
+public class HumanAgent implements Agent, Comparable<Agent> {
 
 	private int chips;
 	private Card[] hand;
 	private int bet;
 	private boolean allIn = false;
 	private Scanner sc = new Scanner(System.in);
-	private final String name;
+	public final String name;
 
 	public HumanAgent(int chips, String name) {
 		this.chips = chips;
@@ -30,7 +30,7 @@ public class HumanAgent implements Agent {
 		copy.hand = hand.clone();
 		return copy;
 	}
-	
+
 
 	public ActionEnum getMove(Dealer dealer) {
 		List<ActionEnum> validActions = dealer.getValidActions(this);
@@ -141,5 +141,10 @@ public class HumanAgent implements Agent {
 			parseBet = 0;
 		}
 		return parseBet;
+	}
+
+	@Override
+	public int compareTo(Agent o) {
+		return o.getName().compareTo(name);
 	}
 }
