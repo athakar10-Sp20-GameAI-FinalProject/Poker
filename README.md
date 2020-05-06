@@ -5,10 +5,10 @@ Done as the final project for Game AI (CSCI-3395-1 Spring 2020) at Trinity Unive
 
 # Executive Summary
 
-Poker implemented using Texas (No Limit) Hold'em rules. AI agent implemented with a paralellized Monte-Carlo Tree Search (MCTS) and some rule-based system behavior. 
+Poker implemented using Texas (No Limit) Hold'em rules. AI agent implemented with a Monte-Carlo Tree Search (MCTS) and some rule-based system behavior.  Blinds and the button are incremented at the end of each pot as it would in a normal poker game. The game runs with at least one human player and a single agent (need to change Executor to specify players).
 
-All game logic classes exist in the game package. All player and AI agent classes exist in the agent package. There is probably not enough time left to add graphics to this project (anyone is welcome to fork the project and put in graphics). The MCTS will use distributed probabilites in its nodes to estimate the value of its hands and the board in order to make intelligent decisions. The simulations rolled out in the tree will be parallelized on multiple threads in order to increase performance. We will see if we are able to add some form of reinforcement learning or vector math so that the agent can build statistical models of how certain other players play and adjust its decision-making accordingly.
+All game logic classes exist in the game package. All player and AI agent classes exist in the agent package. The MCTS calculates distributed probabilites in parallel for its nodes to estimate the value of its hands and the board in order to make intelligent decisions.  Java Standard Input and Standard Output handle I/O for all players. Anyone is welcome to fork this project and put in a graphical display. 
 
-Deck/Card classes and some enumerations were implemented using [this Stack Exchange question's design](https://codereview.stackexchange.com/questions/10583/basic-poker-draw).
+Deck/Card classes and some enumerations were implemented using [this Stack Exchange question's design](https://codereview.stackexchange.com/questions/10583/basic-poker-draw). Dr. Horn's sample MCTS solution was used as a basis for our implementation.
 
 No other preexisting frameworks or packages were used in this repository.
